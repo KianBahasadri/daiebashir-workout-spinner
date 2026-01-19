@@ -59,6 +59,28 @@ const TRACK_REPEATS = 500
 const MIN_LOOPS = 4
 const MAX_LOOPS = 7
 
+const measureReelMetrics = (reelEl: HTMLDivElement | null, trackEl: HTMLDivElement | null) => {
+  const measuredReelWidth = reelEl?.getBoundingClientRect().width ?? 0
+  let measuredCardWidth = CARD_WIDTH
+  let measuredStride = CARD_WIDTH + CARD_GAP
+
+  if (!trackEl) return { reelWidth: measuredReelWidth, cardWidth: measuredCardWidth, stride: measuredStride }
+
+  const firstItem = trackEl.querySelector<HTMLElement>('.reel-item')
+  const secondItem = firstItem?.nextElementSibling as HTMLElement | null
+
+  if (firstItem) measuredCardWidth = firstItem.getBoundingClientRect().width || CARD_WIDTH
+
+  if (firstItem && secondItem) {
+    const firstRect = firstItem.getBoundingClientRect()
+    const secondRect = secondItem.getBoundingClientRect()
+    const s = secondRect.left - firstRect.left
+    if (s > 0) measuredStride = s
+  }
+
+  return { reelWidth: measuredReelWidth, cardWidth: measuredCardWidth, stride: measuredStride }
+}
+
 const getOffsetForIndex = (index: number, reelWidth: number, cardWidth: number, stride: number) => {
   const pointerX = reelWidth / 2
   const itemCenter = index * stride + cardWidth / 2
@@ -99,24 +121,10 @@ function App() {
 
   useEffect(() => {
     const measure = () => {
-      const reelEl = reelRef.current
-      const trackEl = trackRef.current
-
-      setReelWidth(reelEl?.offsetWidth ?? 0)
-
-      if (!trackEl) return
-
-      const firstItem = trackEl.querySelector<HTMLElement>('.reel-item')
-      const secondItem = firstItem?.nextElementSibling as HTMLElement | null
-
-      if (firstItem) {
-        setCardWidth(firstItem.offsetWidth || CARD_WIDTH)
-      }
-
-      if (firstItem && secondItem) {
-        const measuredStride = secondItem.offsetLeft - firstItem.offsetLeft
-        if (measuredStride > 0) setStride(measuredStride)
-      }
+      const metrics = measureReelMetrics(reelRef.current, trackRef.current)
+      setReelWidth(metrics.reelWidth)
+      setCardWidth(metrics.cardWidth)
+      setStride(metrics.stride)
     }
 
     measure()
@@ -211,11 +219,25 @@ function App() {
     window.setTimeout(() => {
       // Snap to the nearest card center (prevents ever landing in the gap,
       // even if sizes changed during the spin).
-      const latestReelWidth = reelRef.current?.offsetWidth ?? reelWidth
-      const latestIndex = getNearestIndexForOffset(targetOffset, latestReelWidth, cardWidth, stride)
+      const metrics = measureReelMetrics(reelRef.current, trackRef.current)
+      const latestReelWidth = metrics.reelWidth || reelWidth
+      const latestCardWidth = metrics.cardWidth || cardWidth
+      const latestStride = metrics.stride || stride
+
+      // Keep state in sync with the DOM in case the user resized mid-spin.
+      setReelWidth(latestReelWidth)
+      setCardWidth(latestCardWidth)
+      setStride(latestStride)
+
+      const latestIndex = getNearestIndexForOffset(
+        targetOffset,
+        latestReelWidth,
+        latestCardWidth,
+        latestStride,
+      )
       const maxIndex = trackItems.length - 1
       const snappedIndex = Math.max(0, Math.min(latestIndex, maxIndex))
-      const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, cardWidth, stride)
+      const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, latestCardWidth, latestStride)
 
       setOffset(snappedOffset)
       setSelectedExercise(EXERCISES[snappedIndex % EXERCISES.length].name)
