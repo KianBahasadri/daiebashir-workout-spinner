@@ -1,6 +1,88 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
+const MATH_EXPLANATIONS = {
+  exitProbability: {
+    title: 'Exit Probability',
+    content: `This is the chance of landing on any exit condition each spin. Calculated as: (sum of exit exercise weights) ÷ (total weight of all exercises). With equal weights, it's simply: (number of exit exercises) ÷ (total exercises).`,
+  },
+  exitConditions: {
+    title: 'Exit Conditions',
+    content: `The number of exercises marked as "exit conditions" - landing on any of these ends the workout. These are exercises like "end workout" or rewards like "shawarma".`,
+  },
+  avgSpins: {
+    title: 'Average Spins Until End',
+    content: `The expected number of spins before hitting an exit condition. This follows a geometric distribution where E[X] = 1/p, where p is the exit probability. Example: if p = 25%, you'd expect 4 spins on average.`,
+  },
+  avgExercises: {
+    title: 'Average Exercises Before End',
+    content: `The expected number of actual exercises you'll do before the workout ends. This is (1-p)/p where p is the exit probability - essentially the average spins minus the final exit spin itself.`,
+  },
+  avgDuration: {
+    title: 'Average Duration Per Exercise',
+    content: `The weighted average duration of non-exit exercises. Each exercise's duration is multiplied by its probability of being selected (given you didn't hit an exit), then summed up.`,
+  },
+  totalDuration: {
+    title: 'Expected Workout Duration',
+    content: `Total expected workout time = (average exercises before end) × (average duration per exercise). This gives you a rough idea of how long your workout will last.`,
+  },
+  lengthCurve: {
+    title: 'Workout Length Curve',
+    content: `This shows the geometric distribution of workout length. The probability of ending on exactly spin k is: (1-p)^(k-1) × p. The curve decays exponentially - most workouts end early, but some can go long!`,
+  },
+  cdf: {
+    title: 'Cumulative Probability',
+    content: `P(L ≤ n) is the probability your workout ends within n spins. Calculated as 1 - (1-p)^n. This tells you "what's the chance I'm done by spin n?"`,
+  },
+  weights: {
+    title: 'Weight System',
+    content: `Each exercise has a weight that determines how likely it is to be selected. Probability = (exercise weight) ÷ (sum of all weights). Higher weight = more likely to land on it.`,
+  },
+} as const
+
+type ExplanationKey = keyof typeof MATH_EXPLANATIONS
+
+function InfoPopup({ explanationKey, activePopup, setActivePopup }: {
+  explanationKey: ExplanationKey
+  activePopup: ExplanationKey | null
+  setActivePopup: (key: ExplanationKey | null) => void
+}) {
+  const isOpen = activePopup === explanationKey
+  const explanation = MATH_EXPLANATIONS[explanationKey]
+
+  return (
+    <span className="info-popup-container">
+      <button
+        type="button"
+        className={`info-button${isOpen ? ' active' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          setActivePopup(isOpen ? null : explanationKey)
+        }}
+        aria-label={`Explain: ${explanation.title}`}
+      >
+        ?
+      </button>
+      {isOpen && (
+        <div className="info-popup" onClick={(e) => e.stopPropagation()}>
+          <div className="info-popup-header">
+            <strong>{explanation.title}</strong>
+            <button
+              type="button"
+              className="info-popup-close"
+              onClick={() => setActivePopup(null)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
+          <p>{explanation.content}</p>
+        </div>
+      )}
+    </span>
+  )
+}
+
 type Exercise = {
   name: string
   color: string
@@ -9,20 +91,23 @@ type Exercise = {
    * These are treated as weights and normalized at runtime.
    */
   weight: number
+  /** Duration of the exercise in minutes */
+  duration: number
+  /** Whether landing on this exercise ends the workout */
+  isExitCondition: boolean
 }
 
 const EXERCISES: Exercise[] = [
-  { name: '10 mins run', color: '#FF6B6B', weight: 1 },
-  { name: '10 mins row', color: '#4ECDC4', weight: 1 },
-  { name: '10 mins cycle', color: '#45B7D1', weight: 1 },
-  { name: '1 min battle ropes', color: '#96CEB4', weight: 1 },
-  { name: '15 pushups', color: '#FFEAA7', weight: 1 },
-  { name: '1 min plank', color: '#DDA0DD', weight: 1 },
-  { name: 'end workout', color: '#98D8C8', weight: 1 },
-  { name: 'shawarama', color: '#F7DC6F', weight: 1 },
+  { name: '10 mins run', color: '#FF6B6B', weight: 1, duration: 10, isExitCondition: false },
+  { name: '10 mins row', color: '#4ECDC4', weight: 1, duration: 10, isExitCondition: false },
+  { name: '10 mins cycle', color: '#45B7D1', weight: 1, duration: 10, isExitCondition: false },
+  { name: '1 min battle ropes', color: '#96CEB4', weight: 1, duration: 1, isExitCondition: false },
+  { name: '2 mins pushups', color: '#FFEAA7', weight: 1, duration: 2, isExitCondition: false },
+  { name: '1 min plank', color: '#DDA0DD', weight: 1, duration: 1, isExitCondition: false },
+  { name: 'end workout', color: '#98D8C8', weight: 1, duration: 0, isExitCondition: true },
+  { name: 'shawarama', color: '#F7DC6F', weight: 1, duration: 0, isExitCondition: true },
 ]
 
-const END_WORKOUT_NAME = 'end workout'
 const LENGTH_CURVE_POINTS = 20
 
 const clampWeight = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0)
@@ -97,6 +182,7 @@ function App() {
   const [isSpinning, setIsSpinning] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
   const [currentIndex, setCurrentIndex] = useState(4 * EXERCISES.length)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
@@ -142,22 +228,42 @@ function App() {
   const math = useMemo(() => {
     const totalWeight = EXERCISES.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
     const usesUniformFallback = totalWeight <= 0
-    const endExercise = EXERCISES.find((exercise) => exercise.name === END_WORKOUT_NAME)
-    const endWeight = clampWeight(endExercise?.weight ?? 0)
 
-    const endProbability = usesUniformFallback
-      ? endExercise
-        ? 1 / EXERCISES.length
+    // Calculate exit probability using isExitCondition
+    const exitExercises = EXERCISES.filter((exercise) => exercise.isExitCondition)
+    const exitWeight = exitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
+
+    const exitProbability = usesUniformFallback
+      ? exitExercises.length > 0
+        ? exitExercises.length / EXERCISES.length
         : 0
-      : endWeight / totalWeight
-    const expectedSpinsUntilEnd = endProbability > 0 ? 1 / endProbability : Number.POSITIVE_INFINITY
+      : exitWeight / totalWeight
+
+    const expectedSpinsUntilEnd = exitProbability > 0 ? 1 / exitProbability : Number.POSITIVE_INFINITY
     const expectedExercisesBeforeEnd =
-      endProbability > 0 ? (1 - endProbability) / endProbability : Number.POSITIVE_INFINITY
+      exitProbability > 0 ? (1 - exitProbability) / exitProbability : Number.POSITIVE_INFINITY
+
+    // Calculate expected duration per non-exit spin
+    const nonExitExercises = EXERCISES.filter((exercise) => !exercise.isExitCondition)
+    const nonExitWeight = nonExitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
+    
+    const expectedDurationPerSpin = usesUniformFallback
+      ? nonExitExercises.length > 0
+        ? nonExitExercises.reduce((sum, exercise) => sum + exercise.duration, 0) / nonExitExercises.length
+        : 0
+      : nonExitWeight > 0
+        ? nonExitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight) * exercise.duration, 0) / nonExitWeight
+        : 0
+
+    // Expected total workout duration = expected exercises before end × expected duration per exercise
+    const expectedTotalDuration = Number.isFinite(expectedExercisesBeforeEnd)
+      ? expectedExercisesBeforeEnd * expectedDurationPerSpin
+      : Number.POSITIVE_INFINITY
 
     const cdf = (spins: number) => {
-      if (endProbability <= 0) return 0
+      if (exitProbability <= 0) return 0
       if (spins <= 0) return 0
-      return 1 - Math.pow(1 - endProbability, spins)
+      return 1 - Math.pow(1 - exitProbability, spins)
     }
 
     const groupsMap = new Map<number, Exercise[]>()
@@ -181,16 +287,21 @@ function App() {
     const lengthCurve = Array.from({ length: LENGTH_CURVE_POINTS }, (_, i) => {
       const spins = i + 1
       const probabilityEndOnSpin =
-        endProbability > 0 ? Math.pow(1 - endProbability, spins - 1) * endProbability : 0
-      return { spins, probabilityEndOnSpin }
+        exitProbability > 0 ? Math.pow(1 - exitProbability, spins - 1) * exitProbability : 0
+      // Expected duration if workout ends on this spin (spins - 1 exercises completed before exit)
+      const durationAtSpin = (spins - 1) * expectedDurationPerSpin
+      return { spins, probabilityEndOnSpin, durationAtSpin }
     })
 
     return {
       totalWeight,
       usesUniformFallback,
-      endProbability,
+      exitProbability,
       expectedSpinsUntilEnd,
       expectedExercisesBeforeEnd,
+      expectedDurationPerSpin,
+      expectedTotalDuration,
+      exitExerciseCount: exitExercises.length,
       chanceEndWithin: cdf,
       groupedByWeight,
       lengthCurve,
@@ -290,7 +401,7 @@ function App() {
         </div>
       )}
 
-      <section className="math" aria-label="Math and odds">
+      <section className="math" aria-label="Math and odds" onClick={() => setActivePopup(null)}>
         <h2>Math</h2>
 
         <div className="math-grid">
@@ -298,11 +409,24 @@ function App() {
             <h3>How likely the game is to end</h3>
             <dl className="math-kpis">
               <div className="math-kpi">
-                <dt>Chance to land on “{END_WORKOUT_NAME}” (per spin)</dt>
-                <dd>{formatPercent(math.endProbability)}</dd>
+                <dt>
+                  Chance to hit exit condition (per spin)
+                  <InfoPopup explanationKey="exitProbability" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
+                <dd>{formatPercent(math.exitProbability)}</dd>
               </div>
               <div className="math-kpi">
-                <dt>Average spins until end</dt>
+                <dt>
+                  Exit conditions
+                  <InfoPopup explanationKey="exitConditions" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
+                <dd>{math.exitExerciseCount}</dd>
+              </div>
+              <div className="math-kpi">
+                <dt>
+                  Average spins until end
+                  <InfoPopup explanationKey="avgSpins" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
                 <dd>
                   {Number.isFinite(math.expectedSpinsUntilEnd)
                     ? math.expectedSpinsUntilEnd.toFixed(2)
@@ -310,10 +434,31 @@ function App() {
                 </dd>
               </div>
               <div className="math-kpi">
-                <dt>Average exercises before end</dt>
+                <dt>
+                  Average exercises before end
+                  <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
                 <dd>
                   {Number.isFinite(math.expectedExercisesBeforeEnd)
                     ? math.expectedExercisesBeforeEnd.toFixed(2)
+                    : '∞'}
+                </dd>
+              </div>
+              <div className="math-kpi">
+                <dt>
+                  Average mins per exercise
+                  <InfoPopup explanationKey="avgDuration" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
+                <dd>{math.expectedDurationPerSpin.toFixed(1)} min</dd>
+              </div>
+              <div className="math-kpi">
+                <dt>
+                  Expected workout duration
+                  <InfoPopup explanationKey="totalDuration" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
+                <dd>
+                  {Number.isFinite(math.expectedTotalDuration)
+                    ? `${math.expectedTotalDuration.toFixed(1)} min`
                     : '∞'}
                 </dd>
               </div>
@@ -325,10 +470,14 @@ function App() {
           </div>
 
           <div className="math-card">
-            <h3>Workout length curve</h3>
+            <h3>
+              Workout length curve
+              <InfoPopup explanationKey="lengthCurve" activePopup={activePopup} setActivePopup={setActivePopup} />
+            </h3>
             <p className="math-subtitle">
               Likelihood the workout ends on spin <span className="math-mono">k</span> (geometric
               distribution). Mean is <span className="math-mono">E[L] = 1 / p</span>.
+              Expected duration: <span className="math-mono">{Number.isFinite(math.expectedTotalDuration) ? `${math.expectedTotalDuration.toFixed(1)} min` : '∞'}</span>.
             </p>
 
             {(() => {
@@ -397,20 +546,27 @@ function App() {
             <div className="math-mini-table" aria-label="Chance the workout has ended within N spins">
               <div>
                 <span className="math-mono">P(L ≤ 5)</span>: {formatPercent(math.chanceEndWithin(5))}
+                <span className="math-duration">≤ {(4 * math.expectedDurationPerSpin).toFixed(0)} min</span>
               </div>
               <div>
                 <span className="math-mono">P(L ≤ 10)</span>: {formatPercent(math.chanceEndWithin(10))}
+                <span className="math-duration">≤ {(9 * math.expectedDurationPerSpin).toFixed(0)} min</span>
               </div>
               <div>
                 <span className="math-mono">P(L ≤ 20)</span>: {formatPercent(math.chanceEndWithin(20))}
+                <span className="math-duration">≤ {(19 * math.expectedDurationPerSpin).toFixed(0)} min</span>
+                <InfoPopup explanationKey="cdf" activePopup={activePopup} setActivePopup={setActivePopup} />
               </div>
             </div>
           </div>
 
           <div className="math-card math-card--full">
-            <h3>Odds by weight (grouped)</h3>
+            <h3>
+              Odds by weight (grouped)
+              <InfoPopup explanationKey="weights" activePopup={activePopup} setActivePopup={setActivePopup} />
+            </h3>
             <p className="math-subtitle">
-              Each item’s chance per spin is <span className="math-mono">weight / totalWeight</span>.
+              Each item's chance per spin is <span className="math-mono">weight / totalWeight</span>.
               Items with identical weights are grouped below.
             </p>
 
@@ -431,9 +587,9 @@ function App() {
                     {group.exercises.map((exercise) => (
                       <span
                         key={exercise.name}
-                        className={`weight-pill${exercise.name === END_WORKOUT_NAME ? ' end' : ''}`}
+                        className={`weight-pill${exercise.isExitCondition ? ' end' : ''}`}
                         style={{ backgroundColor: exercise.color }}
-                        title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin`}
+                        title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
                       >
                         {exercise.name}
                       </span>

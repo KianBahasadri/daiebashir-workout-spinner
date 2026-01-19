@@ -303,6 +303,19 @@ h1 {
   font-size: 0.95rem;
 }
 
+.math-mini-table > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+.math-duration {
+  color: rgba(167, 139, 250, 0.9);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 @media (min-width: 760px) {
   .math-mini-table {
     grid-template-columns: repeat(3, 1fr);
@@ -362,4 +375,115 @@ h1 {
 .weight-pill.end {
   outline: 2px solid rgba(248, 250, 252, 0.85);
   outline-offset: 2px;
+}
+
+/* Info Popup Styles */
+.info-popup-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+}
+
+.info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(148, 163, 184, 0.5);
+  background: rgba(30, 41, 59, 0.8);
+  color: rgba(203, 213, 225, 0.9);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.info-button:hover,
+.info-button.active {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.7);
+  color: #f8fafc;
+}
+
+.info-popup {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max(280px, 40vw);
+  max-width: 360px;
+  padding: 0.85rem 1rem;
+  background: rgba(15, 23, 42, 0.97);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.15);
+  z-index: 100;
+  animation: popupFadeIn 0.15s ease-out;
+}
+
+.info-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: rgba(99, 102, 241, 0.4);
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.info-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.info-popup-header strong {
+  color: #f1f5f9;
+  font-size: 0.95rem;
+}
+
+.info-popup-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.15);
+  color: rgba(203, 213, 225, 0.8);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.info-popup-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.info-popup p {
+  margin: 0;
+  color: rgba(203, 213, 225, 0.95);
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
