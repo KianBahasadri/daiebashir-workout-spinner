@@ -1,105 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-
-const MATH_EXPLANATIONS = {
-  exitProbability: {
-    title: 'Exit Probability',
-    content: `This is the chance of landing on any exit condition each spin. Calculated as: (sum of exit exercise weights) ÷ (total weight of all exercises). With equal weights, it's simply: (number of exit exercises) ÷ (total exercises).`,
-  },
-  exitConditions: {
-    title: 'Exit Conditions',
-    content: `The number of exercises marked as "exit conditions" - landing on any of these ends the workout. These are exercises like "end workout" or rewards like "shawarma".`,
-  },
-  avgSpins: {
-    title: 'Average Spins Until End',
-    content: `The expected number of spins before hitting an exit condition. This follows a geometric distribution where E[X] = 1/p, where p is the exit probability. Example: if p = 25%, you'd expect 4 spins on average.`,
-  },
-  avgExercises: {
-    title: 'Average Exercises Before End',
-    content: `The expected number of actual exercises you'll do before the workout ends. This is (1-p)/p where p is the exit probability - essentially the average spins minus the final exit spin itself.`,
-  },
-  avgDuration: {
-    title: 'Average Duration Per Exercise',
-    content: `The weighted average duration of non-exit exercises. Each exercise's duration is multiplied by its probability of being selected (given you didn't hit an exit), then summed up.`,
-  },
-  totalDuration: {
-    title: 'Expected Workout Duration',
-    content: `Total expected workout time = (average exercises before end) × (average duration per exercise). This gives you a rough idea of how long your workout will last.`,
-  },
-  shawarma: {
-    title: 'Workouts Until Shawarma',
-    content: `Given that each workout ends with some exit condition, this is the expected number of complete workouts until one specifically ends with shawarma. Calculated as: (total exit weight) ÷ (shawarma weight). The ultimate reward!`,
-  },
-  lengthCurve: {
-    title: 'Workout Length Curve',
-    content: `This shows the geometric distribution of workout length. The probability of ending on exactly spin k is: (1-p)^(k-1) × p. The curve decays exponentially - most workouts end early, but some can go long!`,
-  },
-  cdf: {
-    title: 'Cumulative Probability',
-    content: `P(L ≤ n) is the probability your workout ends within n spins. Calculated as 1 - (1-p)^n. This tells you "what's the chance I'm done by spin n?"`,
-  },
-  weights: {
-    title: 'Weight System',
-    content: `Each exercise has a weight that determines how likely it is to be selected. The expected hits per workout = (average exercises before end) × (exercise weight ÷ total weight). Higher weight = more expected hits per workout.`,
-  },
-} as const
-
-type ExplanationKey = keyof typeof MATH_EXPLANATIONS
-
-function InfoPopup({ explanationKey, activePopup, setActivePopup }: {
-  explanationKey: ExplanationKey
-  activePopup: ExplanationKey | null
-  setActivePopup: (key: ExplanationKey | null) => void
-}) {
-  const isOpen = activePopup === explanationKey
-  const explanation = MATH_EXPLANATIONS[explanationKey]
-
-  return (
-    <span className="info-popup-container">
-      <button
-        type="button"
-        className={`info-button${isOpen ? ' active' : ''}`}
-        onClick={(e) => {
-          e.stopPropagation()
-          setActivePopup(isOpen ? null : explanationKey)
-        }}
-        aria-label={`Explain: ${explanation.title}`}
-      >
-        ?
-      </button>
-      {isOpen && (
-        <div className="info-popup" onClick={(e) => e.stopPropagation()}>
-          <div className="info-popup-header">
-            <strong>{explanation.title}</strong>
-            <button
-              type="button"
-              className="info-popup-close"
-              onClick={() => setActivePopup(null)}
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-          <p>{explanation.content}</p>
-        </div>
-      )}
-    </span>
-  )
-}
-
-type Exercise = {
-  name: string
-  color: string
-  /**
-   * Relative weight (>= 0). Higher = more likely.
-   * These are treated as weights and normalized at runtime.
-   */
-  weight: number
-  /** Duration of the exercise in minutes */
-  duration: number
-  /** Whether landing on this exercise ends the workout */
-  isExitCondition: boolean
-}
+import { SessionsTab } from './SessionsTab'
+import { ExercisesTab } from './ExercisesTab'
+import { type Exercise, type ExplanationKey, type MathStats } from './types'
 
 const EXERCISES: Exercise[] = [
   { name: '10 mins run', color: '#FF6B6B', weight: 1, duration: 10, isExitCondition: false },
@@ -115,14 +18,6 @@ const EXERCISES: Exercise[] = [
 const LENGTH_CURVE_POINTS = 20
 
 const clampWeight = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0)
-
-const formatPercent = (probability: number) => {
-  if (!Number.isFinite(probability) || probability <= 0) return '0%'
-  const pct = probability * 100
-  if (pct >= 10) return `${pct.toFixed(1)}%`
-  if (pct >= 1) return `${pct.toFixed(2)}%`
-  return `${pct.toFixed(3)}%`
-}
 
 const pickExerciseIndex = () => {
   const total = EXERCISES.reduce((sum, exercise) => sum + Math.max(0, exercise.weight), 0)
@@ -187,6 +82,7 @@ function App() {
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
+  const [mathTab, setMathTab] = useState<'sessions' | 'exercises'>('sessions')
   const [currentIndex, setCurrentIndex] = useState(4 * EXERCISES.length)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
@@ -229,7 +125,7 @@ function App() {
     setOffset(getOffsetForIndex(currentIndex, reelWidth, cardWidth, stride))
   }, [cardWidth, currentIndex, isSpinning, reelWidth, stride])
 
-  const math = useMemo(() => {
+  const math = useMemo((): MathStats => {
     const totalWeight = EXERCISES.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
     const usesUniformFallback = totalWeight <= 0
 
@@ -290,16 +186,26 @@ function App() {
         const groupProbability = usesUniformFallback
           ? exercises.length / EXERCISES.length
           : perItemProbability * exercises.length
-        // Expected hits per workout = expected exercises before end × probability per spin
-        const expectedHitsPerWorkout = Number.isFinite(expectedExercisesBeforeEnd)
-          ? expectedExercisesBeforeEnd * perItemProbability
-          : Number.POSITIVE_INFINITY
+        
+        // Check if this group contains exit conditions
+        const hasExitConditions = exercises.some(e => e.isExitCondition)
+        
+        // Expected hits per workout:
+        // - For exit conditions: P(ending with this exit) = weight / exitWeight
+        // - For regular exercises: expectedExercisesBeforeEnd × perItemProbability
+        const expectedHitsPerWorkout = hasExitConditions
+          ? exitWeight > 0 ? weight / exitWeight : 0
+          : Number.isFinite(expectedExercisesBeforeEnd)
+            ? expectedExercisesBeforeEnd * perItemProbability
+            : Number.POSITIVE_INFINITY
+        
         return { 
           weight, 
           exercises, 
           perItemProbability, 
           groupProbability,
-          expectedHitsPerWorkout 
+          expectedHitsPerWorkout,
+          hasExitConditions
         }
       })
       .sort((a, b) => b.weight - a.weight || b.exercises.length - a.exercises.length)
@@ -426,198 +332,39 @@ function App() {
       <section className="math" aria-label="Math and odds" onClick={() => setActivePopup(null)}>
         <h2>Math</h2>
 
-        <div className="math-grid">
-          <div className="math-card">
-            <h3>How likely the game is to end</h3>
-            <dl className="math-kpis">
-              <div className="math-kpi">
-                <dt>
-                  Chance to hit exit condition (per spin)
-                  <InfoPopup explanationKey="exitProbability" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>{formatPercent(math.exitProbability)}</dd>
-              </div>
-              <div className="math-kpi">
-                <dt>
-                  Average exercises before end
-                  <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>
-                  {Number.isFinite(math.expectedExercisesBeforeEnd)
-                    ? math.expectedExercisesBeforeEnd.toFixed(2)
-                    : '∞'}
-                </dd>
-              </div>
-              <div className="math-kpi">
-                <dt>
-                  Average mins per exercise
-                  <InfoPopup explanationKey="avgDuration" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>{math.expectedDurationPerSpin.toFixed(1)} min</dd>
-              </div>
-              <div className="math-kpi">
-                <dt>
-                  Expected workout duration
-                  <InfoPopup explanationKey="totalDuration" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>
-                  {Number.isFinite(math.expectedTotalDuration)
-                    ? `${math.expectedTotalDuration.toFixed(1)} min`
-                    : '∞'}
-                </dd>
-              </div>
-              <div className="math-kpi math-kpi--highlight">
-                <dt>
-                  🥙 Avg workouts until shawarma
-                  <InfoPopup explanationKey="shawarma" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>
-                  {Number.isFinite(math.expectedWorkoutsUntilShawarma)
-                    ? math.expectedWorkoutsUntilShawarma.toFixed(1)
-                    : '∞'}
-                </dd>
-              </div>
-            </dl>
-
-            <p className="math-note">
-              Assumes each spin is independent, using the same weights each time.
-            </p>
-          </div>
-
-          <div className="math-card">
-            <h3>
-              Workout length curve
-              <InfoPopup explanationKey="lengthCurve" activePopup={activePopup} setActivePopup={setActivePopup} />
-            </h3>
-            <p className="math-subtitle">
-              Likelihood the workout ends on spin <span className="math-mono">k</span> (geometric
-              distribution). Mean is <span className="math-mono">E[L] = 1 / p</span>.
-              Expected duration: <span className="math-mono">{Number.isFinite(math.expectedTotalDuration) ? `${math.expectedTotalDuration.toFixed(1)} min` : '∞'}</span>.
-            </p>
-
-            {(() => {
-              const chartW = 320
-              const chartH = 140
-              const pad = 12
-              const innerW = chartW - pad * 2
-              const innerH = chartH - pad * 2
-
-              const maxProb = Math.max(
-                ...math.lengthCurve.map((point) => point.probabilityEndOnSpin),
-                0,
-              )
-              const safeMax = maxProb > 0 ? maxProb : 1
-
-              const points = math.lengthCurve
-                .map((point, idx) => {
-                  const t = math.lengthCurve.length > 1 ? idx / (math.lengthCurve.length - 1) : 0
-                  const x = pad + t * innerW
-                  const y = pad + innerH - (point.probabilityEndOnSpin / safeMax) * innerH
-                  return `${x.toFixed(2)},${y.toFixed(2)}`
-                })
-                .join(' ')
-
-              const expected = math.expectedSpinsUntilEnd
-              const expectedT = Number.isFinite(expected)
-                ? Math.max(0, Math.min(1, (expected - 1) / (LENGTH_CURVE_POINTS - 1)))
-                : 1
-              const expectedX = pad + expectedT * innerW
-
-              return (
-                <svg
-                  className="math-chart"
-                  viewBox={`0 0 ${chartW} ${chartH}`}
-                  role="img"
-                  aria-label={`Curve of probability the workout ends on spin k (k = 1..${LENGTH_CURVE_POINTS}).`}
-                >
-                  <rect x="0" y="0" width={chartW} height={chartH} rx="10" ry="10" />
-
-                  <g>
-                    <line x1={pad} y1={chartH - pad} x2={chartW - pad} y2={chartH - pad} />
-                    <line x1={pad} y1={pad} x2={pad} y2={chartH - pad} />
-                  </g>
-
-                  <polyline points={points} />
-
-                  <g>
-                    <line x1={expectedX} y1={pad} x2={expectedX} y2={chartH - pad} />
-                    <text x={expectedX} y={pad + 10} textAnchor="middle">
-                      E[L]
-                    </text>
-                  </g>
-
-                  <g>
-                    <text x={pad} y={chartH - 2} textAnchor="start">
-                      1
-                    </text>
-                    <text x={chartW - pad} y={chartH - 2} textAnchor="end">
-                      {LENGTH_CURVE_POINTS}
-                    </text>
-                  </g>
-                </svg>
-              )
-            })()}
-
-            <div className="math-mini-table" aria-label="Chance the workout has ended within N spins">
-              <div>
-                <span className="math-mono">P(L ≤ 5)</span>: {formatPercent(math.chanceEndWithin(5))}
-                <span className="math-duration">≤ {(4 * math.expectedDurationPerSpin).toFixed(0)} min</span>
-              </div>
-              <div>
-                <span className="math-mono">P(L ≤ 10)</span>: {formatPercent(math.chanceEndWithin(10))}
-                <span className="math-duration">≤ {(9 * math.expectedDurationPerSpin).toFixed(0)} min</span>
-              </div>
-              <div>
-                <span className="math-mono">P(L ≤ 20)</span>: {formatPercent(math.chanceEndWithin(20))}
-                <span className="math-duration">≤ {(19 * math.expectedDurationPerSpin).toFixed(0)} min</span>
-                <InfoPopup explanationKey="cdf" activePopup={activePopup} setActivePopup={setActivePopup} />
-              </div>
-            </div>
-          </div>
-
-          <div className="math-card math-card--full">
-            <h3>
-              Odds by weight (grouped)
-              <InfoPopup explanationKey="weights" activePopup={activePopup} setActivePopup={setActivePopup} />
-            </h3>
-            <p className="math-subtitle">
-              Expected number of times you'll hit each exercise per workout. Items with identical weights are grouped below.
-            </p>
-
-            <div className="weight-groups">
-              {math.groupedByWeight.map((group) => (
-                <div key={group.weight} className="weight-group">
-                  <div className="weight-group-header">
-                    <div className="weight-group-title">
-                      Weight <span className="math-mono">{group.weight}</span>
-                    </div>
-                    <div className="weight-group-odds">
-                      <span className="math-mono">
-                        {Number.isFinite(group.expectedHitsPerWorkout)
-                          ? group.expectedHitsPerWorkout.toFixed(2)
-                          : '∞'}
-                      </span>{' '}
-                      hits per workout each
-                    </div>
-                  </div>
-
-                  <div className="weight-group-items">
-                    {group.exercises.map((exercise) => (
-                      <span
-                        key={exercise.name}
-                        className={`weight-pill${exercise.isExitCondition ? ' end' : ''}`}
-                        style={{ backgroundColor: exercise.color }}
-                        title={`${exercise.name}: ${Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout.toFixed(2) : '∞'} hits per workout, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
-                      >
-                        {exercise.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="math-tabs">
+          <button
+            className={`math-tab${mathTab === 'sessions' ? ' active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setMathTab('sessions'); }}
+            type="button"
+          >
+            Sessions
+          </button>
+          <button
+            className={`math-tab${mathTab === 'exercises' ? ' active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setMathTab('exercises'); }}
+            type="button"
+          >
+            Exercises
+          </button>
         </div>
+
+        {mathTab === 'sessions' && (
+          <SessionsTab
+            math={math}
+            lengthCurvePoints={LENGTH_CURVE_POINTS}
+            activePopup={activePopup}
+            setActivePopup={setActivePopup}
+          />
+        )}
+
+        {mathTab === 'exercises' && (
+          <ExercisesTab
+            math={math}
+            activePopup={activePopup}
+            setActivePopup={setActivePopup}
+          />
+        )}
       </section>
     </div>
   )
