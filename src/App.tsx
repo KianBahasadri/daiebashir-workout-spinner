@@ -43,7 +43,7 @@ const MAX_LOOPS = 7
 
 // Calculate the width multiplier for each exercise based on its probability
 const calculateExerciseWidths = () => {
-  const totalWeight = EXERCISES.reduce((sum, exercise) => sum + Math.max(0, exercise.weight), 0)
+  const totalWeight = EXERCISES.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
   
   // Fallback to uniform if weights are all 0/invalid
   if (totalWeight <= 0) {
@@ -52,7 +52,7 @@ const calculateExerciseWidths = () => {
   
   // Calculate probability for each exercise
   return EXERCISES.map(exercise => {
-    const probability = Math.max(0, exercise.weight) / totalWeight
+    const probability = clampWeight(exercise.weight) / totalWeight
     // Width is proportional to probability
     return probability
   })
@@ -338,8 +338,7 @@ function App() {
           >
             {trackItems.map((exercise, index) => {
               // Calculate width based on probability
-              const widthMultiplier = exercise.widthMultiplier
-              const cardWidth = `calc(var(--card-width) * ${widthMultiplier})`
+              const cardWidth = `calc(var(--card-width) * ${exercise.widthMultiplier})`
               
               return (
                 <div
@@ -347,7 +346,6 @@ function App() {
                   className={`reel-item${index === selectedIndex ? ' selected' : ''}`}
                   style={{ 
                     backgroundColor: exercise.color,
-                    width: cardWidth,
                     flex: `0 0 ${cardWidth}`,
                   }}
                 >
