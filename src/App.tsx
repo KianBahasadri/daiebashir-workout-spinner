@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
-import { type Exercise, type ExplanationKey, type MathStats } from './types'
+import { type Exercise, type ExplanationKey, type MathStats } from './types.tsx'
 
 const EXERCISES: Exercise[] = [
   { name: '10 mins run', color: '#FF6B6B', weight: 1, duration: 10, isExitCondition: false },
@@ -221,6 +221,8 @@ function App() {
 
     return {
       totalWeight,
+      exitWeight,
+      nonExitWeight,
       usesUniformFallback,
       exitProbability,
       expectedSpinsUntilEnd,
@@ -228,6 +230,7 @@ function App() {
       expectedDurationPerSpin,
       expectedTotalDuration,
       exitExerciseCount: exitExercises.length,
+      shawarmaWeight,
       shawarmaGivenExit,
       expectedWorkoutsUntilShawarma,
       chanceEndWithin: cdf,

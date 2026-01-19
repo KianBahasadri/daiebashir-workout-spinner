@@ -1,5 +1,5 @@
 import { InfoPopup } from './InfoPopup'
-import { type MathStats, type ExplanationKey, formatPercent } from './types'
+import { type MathStats, type ExplanationKey, formatPercent } from './types.tsx'
 
 type SessionsTabProps = {
   math: MathStats
@@ -17,14 +17,14 @@ export function SessionsTab({ math, lengthCurvePoints, activePopup, setActivePop
           <div className="math-kpi">
             <dt>
               Chance to hit exit condition (per spin)
-              <InfoPopup explanationKey="exitProbability" activePopup={activePopup} setActivePopup={setActivePopup} />
+              <InfoPopup explanationKey="exitProbability" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>{formatPercent(math.exitProbability)}</dd>
           </div>
           <div className="math-kpi">
             <dt>
               Average exercises before end
-              <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} />
+              <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>
               {Number.isFinite(math.expectedExercisesBeforeEnd)
@@ -35,14 +35,14 @@ export function SessionsTab({ math, lengthCurvePoints, activePopup, setActivePop
           <div className="math-kpi">
             <dt>
               Average mins per exercise
-              <InfoPopup explanationKey="avgDuration" activePopup={activePopup} setActivePopup={setActivePopup} />
+              <InfoPopup explanationKey="avgDuration" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>{math.expectedDurationPerSpin.toFixed(1)} min</dd>
           </div>
           <div className="math-kpi">
             <dt>
               Expected workout duration
-              <InfoPopup explanationKey="totalDuration" activePopup={activePopup} setActivePopup={setActivePopup} />
+              <InfoPopup explanationKey="totalDuration" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>
               {Number.isFinite(math.expectedTotalDuration)
@@ -53,7 +53,7 @@ export function SessionsTab({ math, lengthCurvePoints, activePopup, setActivePop
           <div className="math-kpi math-kpi--highlight">
             <dt>
               🥙 Avg workouts until shawarma
-              <InfoPopup explanationKey="shawarma" activePopup={activePopup} setActivePopup={setActivePopup} />
+              <InfoPopup explanationKey="shawarma" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>
               {Number.isFinite(math.expectedWorkoutsUntilShawarma)
@@ -71,7 +71,7 @@ export function SessionsTab({ math, lengthCurvePoints, activePopup, setActivePop
       <div className="math-card">
         <h3>
           Workout length curve
-          <InfoPopup explanationKey="lengthCurve" activePopup={activePopup} setActivePopup={setActivePopup} />
+          <InfoPopup explanationKey="lengthCurve" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
         </h3>
         <p className="math-subtitle">
           Likelihood the workout ends on spin <span className="math-mono">k</span> (geometric
@@ -154,7 +154,7 @@ export function SessionsTab({ math, lengthCurvePoints, activePopup, setActivePop
           <div>
             <span className="math-mono">P(L ≤ 20)</span>: {formatPercent(math.chanceEndWithin(20))}
             <span className="math-duration">≤ {(19 * math.expectedDurationPerSpin).toFixed(0)} min</span>
-            <InfoPopup explanationKey="cdf" activePopup={activePopup} setActivePopup={setActivePopup} />
+            <InfoPopup explanationKey="cdf" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { InfoPopup } from './InfoPopup'
-import { type MathStats, type ExplanationKey, formatPercent } from './types'
+import { type MathStats, type ExplanationKey, formatPercent } from './types.tsx'
 
 type ExercisesTabProps = {
   math: MathStats
@@ -13,7 +13,7 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
       <div className="math-card math-card--full">
         <h3>
           Odds by weight (grouped)
-          <InfoPopup explanationKey="weights" activePopup={activePopup} setActivePopup={setActivePopup} />
+          <InfoPopup explanationKey="weights" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
         </h3>
         <p className="math-subtitle">
           Expected hits per workout for each exercise, grouped by weight tier.
@@ -31,7 +31,7 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
                 <span><span className="math-mono">{formatPercent(group.perItemProbability)}</span> per spin</span>
                 <span><span className="math-mono">{Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout.toFixed(2) : '∞'}</span> hits/workout</span>
                 <span><span className="math-mono">{(group.exercises.reduce((sum, e) => sum + e.duration, 0) / group.exercises.length * (Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout : 0)).toFixed(1)}</span> min expected</span>
-                <span><span className="math-mono">{group.expectedHitsPerWorkout > 0 ? (1 / group.expectedHitsPerWorkout).toFixed(1) : '∞'}</span> workouts until hit</span>
+                <span><span className="math-mono">{group.expectedHitsPerWorkout > 0 ? (1 / group.expectedHitsPerWorkout).toFixed(1) : '∞'}</span> workouts until hit<InfoPopup explanationKey="workoutsUntilHit" activePopup={activePopup} setActivePopup={setActivePopup} math={math} /></span>
               </div>
               <div className="weight-group-items-compact">
                 {group.exercises.map((exercise) => (
