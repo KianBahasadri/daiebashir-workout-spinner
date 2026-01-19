@@ -26,6 +26,10 @@ const MATH_EXPLANATIONS = {
     title: 'Expected Workout Duration',
     content: `Total expected workout time = (average exercises before end) × (average duration per exercise). This gives you a rough idea of how long your workout will last.`,
   },
+  shawarma: {
+    title: 'Workouts Until Shawarma',
+    content: `Given that each workout ends with some exit condition, this is the expected number of complete workouts until one specifically ends with shawarma. Calculated as: (total exit weight) ÷ (shawarma weight). The ultimate reward!`,
+  },
   lengthCurve: {
     title: 'Workout Length Curve',
     content: `This shows the geometric distribution of workout length. The probability of ending on exactly spin k is: (1-p)^(k-1) × p. The curve decays exponentially - most workouts end early, but some can go long!`,
@@ -36,7 +40,7 @@ const MATH_EXPLANATIONS = {
   },
   weights: {
     title: 'Weight System',
-    content: `Each exercise has a weight that determines how likely it is to be selected. Probability = (exercise weight) ÷ (sum of all weights). Higher weight = more likely to land on it.`,
+    content: `Each exercise has a weight that determines how likely it is to be selected. The expected hits per workout = (average exercises before end) × (exercise weight ÷ total weight). Higher weight = more expected hits per workout.`,
   },
 } as const
 
@@ -105,7 +109,7 @@ const EXERCISES: Exercise[] = [
   { name: '2 mins pushups', color: '#FFEAA7', weight: 1, duration: 2, isExitCondition: false },
   { name: '1 min plank', color: '#DDA0DD', weight: 1, duration: 1, isExitCondition: false },
   { name: 'end workout', color: '#98D8C8', weight: 1, duration: 0, isExitCondition: true },
-  { name: 'shawarama', color: '#F7DC6F', weight: 1, duration: 0, isExitCondition: true },
+  { name: 'shawarama', color: '#F7DC6F', weight: 0.25, duration: 0, isExitCondition: true },
 ]
 
 const LENGTH_CURVE_POINTS = 20
@@ -239,6 +243,12 @@ function App() {
         : 0
       : exitWeight / totalWeight
 
+    // Calculate shawarma-specific stats
+    const shawarmaExercise = EXERCISES.find((exercise) => exercise.name.toLowerCase().includes('shawarama') || exercise.name.toLowerCase().includes('shawarma'))
+    const shawarmaWeight = clampWeight(shawarmaExercise?.weight ?? 0)
+    const shawarmaGivenExit = exitWeight > 0 ? shawarmaWeight / exitWeight : 0
+    const expectedWorkoutsUntilShawarma = shawarmaGivenExit > 0 ? 1 / shawarmaGivenExit : Number.POSITIVE_INFINITY
+
     const expectedSpinsUntilEnd = exitProbability > 0 ? 1 / exitProbability : Number.POSITIVE_INFINITY
     const expectedExercisesBeforeEnd =
       exitProbability > 0 ? (1 - exitProbability) / exitProbability : Number.POSITIVE_INFINITY
@@ -280,7 +290,17 @@ function App() {
         const groupProbability = usesUniformFallback
           ? exercises.length / EXERCISES.length
           : perItemProbability * exercises.length
-        return { weight, exercises, perItemProbability, groupProbability }
+        // Expected hits per workout = expected exercises before end × probability per spin
+        const expectedHitsPerWorkout = Number.isFinite(expectedExercisesBeforeEnd)
+          ? expectedExercisesBeforeEnd * perItemProbability
+          : Number.POSITIVE_INFINITY
+        return { 
+          weight, 
+          exercises, 
+          perItemProbability, 
+          groupProbability,
+          expectedHitsPerWorkout 
+        }
       })
       .sort((a, b) => b.weight - a.weight || b.exercises.length - a.exercises.length)
 
@@ -302,6 +322,8 @@ function App() {
       expectedDurationPerSpin,
       expectedTotalDuration,
       exitExerciseCount: exitExercises.length,
+      shawarmaGivenExit,
+      expectedWorkoutsUntilShawarma,
       chanceEndWithin: cdf,
       groupedByWeight,
       lengthCurve,
@@ -417,24 +439,6 @@ function App() {
               </div>
               <div className="math-kpi">
                 <dt>
-                  Exit conditions
-                  <InfoPopup explanationKey="exitConditions" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>{math.exitExerciseCount}</dd>
-              </div>
-              <div className="math-kpi">
-                <dt>
-                  Average spins until end
-                  <InfoPopup explanationKey="avgSpins" activePopup={activePopup} setActivePopup={setActivePopup} />
-                </dt>
-                <dd>
-                  {Number.isFinite(math.expectedSpinsUntilEnd)
-                    ? math.expectedSpinsUntilEnd.toFixed(2)
-                    : '∞'}
-                </dd>
-              </div>
-              <div className="math-kpi">
-                <dt>
                   Average exercises before end
                   <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} />
                 </dt>
@@ -459,6 +463,17 @@ function App() {
                 <dd>
                   {Number.isFinite(math.expectedTotalDuration)
                     ? `${math.expectedTotalDuration.toFixed(1)} min`
+                    : '∞'}
+                </dd>
+              </div>
+              <div className="math-kpi math-kpi--highlight">
+                <dt>
+                  🥙 Avg workouts until shawarma
+                  <InfoPopup explanationKey="shawarma" activePopup={activePopup} setActivePopup={setActivePopup} />
+                </dt>
+                <dd>
+                  {Number.isFinite(math.expectedWorkoutsUntilShawarma)
+                    ? math.expectedWorkoutsUntilShawarma.toFixed(1)
                     : '∞'}
                 </dd>
               </div>
@@ -566,8 +581,7 @@ function App() {
               <InfoPopup explanationKey="weights" activePopup={activePopup} setActivePopup={setActivePopup} />
             </h3>
             <p className="math-subtitle">
-              Each item's chance per spin is <span className="math-mono">weight / totalWeight</span>.
-              Items with identical weights are grouped below.
+              Expected number of times you'll hit each exercise per workout. Items with identical weights are grouped below.
             </p>
 
             <div className="weight-groups">
@@ -578,8 +592,12 @@ function App() {
                       Weight <span className="math-mono">{group.weight}</span>
                     </div>
                     <div className="weight-group-odds">
-                      <span className="math-mono">{formatPercent(group.perItemProbability)}</span> each
-                      · <span className="math-mono">{formatPercent(group.groupProbability)}</span> total
+                      <span className="math-mono">
+                        {Number.isFinite(group.expectedHitsPerWorkout)
+                          ? group.expectedHitsPerWorkout.toFixed(2)
+                          : '∞'}
+                      </span>{' '}
+                      hits per workout each
                     </div>
                   </div>
 
@@ -589,7 +607,7 @@ function App() {
                         key={exercise.name}
                         className={`weight-pill${exercise.isExitCondition ? ' end' : ''}`}
                         style={{ backgroundColor: exercise.color }}
-                        title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
+                        title={`${exercise.name}: ${Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout.toFixed(2) : '∞'} hits per workout, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
                       >
                         {exercise.name}
                       </span>
