@@ -2,22 +2,15 @@
 
 A fun, gamified workout app that adds randomness to your exercise routine. Spin the wheel to get your next exercise!
 
-## Features
-
-### MVP (Current)
-- [x] Spinning wheel with workout exercises
-- [x] Click to spin animation
-- [x] Random exercise selection
-- [x] Visual feedback on selected exercise
-
-### Planned
-- [ ] Customizable exercise list
-- [ ] Rep/time counters for each exercise
-- [ ] Workout history tracking
-- [ ] Sound effects
-- [ ] Difficulty levels (easy/medium/hard spins)
-- [ ] Rest timer between exercises
-- [ ] Full workout mode (spin X times for a complete routine)
+## Exercises
+- 10 mins run
+- 10 mins row
+- 10 mins cycle
+- 1 min battle ropes
+- 15 pushups
+- 1 min plank
+- end workout
+- shawarama
 
 ## Tech Stack
 - React + TypeScript

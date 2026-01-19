@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
 const EXERCISES = [
-  { name: 'Push-ups', color: '#FF6B6B' },
-  { name: 'Squats', color: '#4ECDC4' },
-  { name: 'Lunges', color: '#45B7D1' },
-  { name: 'Plank', color: '#96CEB4' },
-  { name: 'Burpees', color: '#FFEAA7' },
-  { name: 'Jumping Jacks', color: '#DDA0DD' },
-  { name: 'Mountain Climbers', color: '#98D8C8' },
-  { name: 'High Knees', color: '#F7DC6F' },
+  { name: '10 mins run', color: '#FF6B6B' },
+  { name: '10 mins row', color: '#4ECDC4' },
+  { name: '10 mins cycle', color: '#45B7D1' },
+  { name: '1 min battle ropes', color: '#96CEB4' },
+  { name: '15 pushups', color: '#FFEAA7' },
+  { name: '1 min plank', color: '#DDA0DD' },
+  { name: 'end workout', color: '#98D8C8' },
+  { name: 'shawarama', color: '#F7DC6F' },
 ]
 
 const SPIN_DURATION_MS = 4000
