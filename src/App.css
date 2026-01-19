@@ -90,7 +90,7 @@ h1 {
 }
 
 .reel-item {
-  flex: 0 0 var(--card-width);
+  /* flex and width are now set inline based on probability */
   height: var(--card-height);
   display: flex;
   align-items: center;

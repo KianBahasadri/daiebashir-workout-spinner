@@ -37,44 +37,75 @@ const pickExerciseIndex = () => {
 }
 
 const SPIN_DURATION_MS = 4000
-const CARD_WIDTH = 160
-const CARD_GAP = 16
 const TRACK_REPEATS = 500
 const MIN_LOOPS = 4
 const MAX_LOOPS = 7
 
-const measureReelMetrics = (reelEl: HTMLDivElement | null, trackEl: HTMLDivElement | null) => {
-  const measuredReelWidth = reelEl?.getBoundingClientRect().width ?? 0
-  let measuredCardWidth = CARD_WIDTH
-  let measuredStride = CARD_WIDTH + CARD_GAP
-
-  if (!trackEl) return { reelWidth: measuredReelWidth, cardWidth: measuredCardWidth, stride: measuredStride }
-
-  const firstItem = trackEl.querySelector<HTMLElement>('.reel-item')
-  const secondItem = firstItem?.nextElementSibling as HTMLElement | null
-
-  if (firstItem) measuredCardWidth = firstItem.getBoundingClientRect().width || CARD_WIDTH
-
-  if (firstItem && secondItem) {
-    const firstRect = firstItem.getBoundingClientRect()
-    const secondRect = secondItem.getBoundingClientRect()
-    const s = secondRect.left - firstRect.left
-    if (s > 0) measuredStride = s
+// Calculate the width multiplier for each exercise based on its probability
+const calculateExerciseWidths = () => {
+  const totalWeight = EXERCISES.reduce((sum, exercise) => sum + Math.max(0, exercise.weight), 0)
+  
+  // Fallback to uniform if weights are all 0/invalid
+  if (totalWeight <= 0) {
+    return EXERCISES.map(() => 1)
   }
-
-  return { reelWidth: measuredReelWidth, cardWidth: measuredCardWidth, stride: measuredStride }
+  
+  // Calculate probability for each exercise
+  return EXERCISES.map(exercise => {
+    const probability = Math.max(0, exercise.weight) / totalWeight
+    // Width is proportional to probability
+    return probability
+  })
 }
 
-const getOffsetForIndex = (index: number, reelWidth: number, cardWidth: number, stride: number) => {
+const EXERCISE_WIDTH_MULTIPLIERS = calculateExerciseWidths()
+
+const measureReelMetrics = (reelEl: HTMLDivElement | null, trackEl: HTMLDivElement | null) => {
+  const measuredReelWidth = reelEl?.getBoundingClientRect().width ?? 0
+  
+  if (!trackEl) return { reelWidth: measuredReelWidth, itemPositions: [] as number[] }
+
+  // Measure actual positions of all items
+  const items = trackEl.querySelectorAll<HTMLElement>('.reel-item')
+  const itemPositions: number[] = []
+  
+  items.forEach((item) => {
+    const rect = item.getBoundingClientRect()
+    const trackRect = trackEl.getBoundingClientRect()
+    // Store the center position of each item relative to track
+    itemPositions.push(rect.left - trackRect.left + rect.width / 2)
+  })
+
+  return { reelWidth: measuredReelWidth, itemPositions }
+}
+
+const getOffsetForIndex = (index: number, reelWidth: number, itemPositions: number[]) => {
+  if (itemPositions.length === 0 || index >= itemPositions.length) return 0
+  
   const pointerX = reelWidth / 2
-  const itemCenter = index * stride + cardWidth / 2
+  const itemCenter = itemPositions[index]
   return Math.round(pointerX - itemCenter)
 }
 
-const getNearestIndexForOffset = (offset: number, reelWidth: number, cardWidth: number, stride: number) => {
+const getNearestIndexForOffset = (offset: number, reelWidth: number, itemPositions: number[]) => {
+  if (itemPositions.length === 0) return 0
+  
   const pointerX = reelWidth / 2
-  const rawIndex = (pointerX - offset - cardWidth / 2) / stride
-  return Math.round(rawIndex)
+  const targetX = pointerX - offset
+  
+  // Find the item whose center is closest to the target position
+  let nearestIndex = 0
+  let minDistance = Math.abs(itemPositions[0] - targetX)
+  
+  for (let i = 1; i < itemPositions.length; i++) {
+    const distance = Math.abs(itemPositions[i] - targetX)
+    if (distance < minDistance) {
+      minDistance = distance
+      nearestIndex = i
+    }
+  }
+  
+  return nearestIndex
 }
 
 function App() {
@@ -86,19 +117,20 @@ function App() {
   const [currentIndex, setCurrentIndex] = useState(4 * EXERCISES.length)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
-  const [cardWidth, setCardWidth] = useState(CARD_WIDTH)
-  const [stride, setStride] = useState(CARD_WIDTH + CARD_GAP)
+  const [itemPositions, setItemPositions] = useState<number[]>([])
   const reelRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
 
   const trackItems = useMemo(() => {
-    const items: Array<{ name: string; color: string; key: string }> = []
+    const items: Array<{ name: string; color: string; key: string; widthMultiplier: number }> = []
     for (let repeat = 0; repeat < TRACK_REPEATS; repeat += 1) {
-      for (const exercise of EXERCISES) {
+      for (let i = 0; i < EXERCISES.length; i += 1) {
+        const exercise = EXERCISES[i]
         items.push({
           name: exercise.name,
           color: exercise.color,
           key: `${repeat}-${exercise.name}`,
+          widthMultiplier: EXERCISE_WIDTH_MULTIPLIERS[i],
         })
       }
     }
@@ -109,8 +141,7 @@ function App() {
     const measure = () => {
       const metrics = measureReelMetrics(reelRef.current, trackRef.current)
       setReelWidth(metrics.reelWidth)
-      setCardWidth(metrics.cardWidth)
-      setStride(metrics.stride)
+      setItemPositions(metrics.itemPositions)
     }
 
     measure()
@@ -121,9 +152,9 @@ function App() {
 
   useEffect(() => {
     if (isSpinning) return
-    if (!reelWidth) return
-    setOffset(getOffsetForIndex(currentIndex, reelWidth, cardWidth, stride))
-  }, [cardWidth, currentIndex, isSpinning, reelWidth, stride])
+    if (!reelWidth || itemPositions.length === 0) return
+    setOffset(getOffsetForIndex(currentIndex, reelWidth, itemPositions))
+  }, [currentIndex, isSpinning, reelWidth, itemPositions])
 
   const math = useMemo((): MathStats => {
     const totalWeight = EXERCISES.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
@@ -240,7 +271,7 @@ function App() {
   }, [])
 
   const spin = () => {
-    if (isSpinning || !reelWidth) return
+    if (isSpinning || !reelWidth || itemPositions.length === 0) return
 
     setIsSpinning(true)
     setSelectedExercise(null)
@@ -254,7 +285,7 @@ function App() {
     const distanceToTarget = (exerciseIndex - currentRelativeIndex + EXERCISES.length) % EXERCISES.length
     
     const targetIndex = currentIndex + loops * EXERCISES.length + distanceToTarget
-    const targetOffset = getOffsetForIndex(targetIndex, reelWidth, cardWidth, stride)
+    const targetOffset = getOffsetForIndex(targetIndex, reelWidth, itemPositions)
 
     setOffset(targetOffset)
 
@@ -263,23 +294,20 @@ function App() {
       // even if sizes changed during the spin).
       const metrics = measureReelMetrics(reelRef.current, trackRef.current)
       const latestReelWidth = metrics.reelWidth || reelWidth
-      const latestCardWidth = metrics.cardWidth || cardWidth
-      const latestStride = metrics.stride || stride
+      const latestItemPositions = metrics.itemPositions.length > 0 ? metrics.itemPositions : itemPositions
 
       // Keep state in sync with the DOM in case the user resized mid-spin.
       setReelWidth(latestReelWidth)
-      setCardWidth(latestCardWidth)
-      setStride(latestStride)
+      setItemPositions(latestItemPositions)
 
       const latestIndex = getNearestIndexForOffset(
         targetOffset,
         latestReelWidth,
-        latestCardWidth,
-        latestStride,
+        latestItemPositions,
       )
       const maxIndex = trackItems.length - 1
       const snappedIndex = Math.max(0, Math.min(latestIndex, maxIndex))
-      const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, latestCardWidth, latestStride)
+      const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, latestItemPositions)
 
       setOffset(snappedOffset)
       setSelectedExercise(EXERCISES[snappedIndex % EXERCISES.length].name)
@@ -308,15 +336,25 @@ function App() {
                 : 'none',
             }}
           >
-            {trackItems.map((exercise, index) => (
-              <div
-                key={exercise.key}
-                className={`reel-item${index === selectedIndex ? ' selected' : ''}`}
-                style={{ backgroundColor: exercise.color }}
-              >
-                {exercise.name}
-              </div>
-            ))}
+            {trackItems.map((exercise, index) => {
+              // Calculate width based on probability
+              const widthMultiplier = exercise.widthMultiplier
+              const cardWidth = `calc(var(--card-width) * ${widthMultiplier})`
+              
+              return (
+                <div
+                  key={exercise.key}
+                  className={`reel-item${index === selectedIndex ? ' selected' : ''}`}
+                  style={{ 
+                    backgroundColor: exercise.color,
+                    width: cardWidth,
+                    flex: `0 0 ${cardWidth}`,
+                  }}
+                >
+                  {exercise.name}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
