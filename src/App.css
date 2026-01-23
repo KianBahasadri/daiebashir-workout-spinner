@@ -679,3 +679,50 @@ h1 {
   line-height: 0;
   color: rgba(203, 213, 225, 0.7);
 }
+
+/* Rules tab styles */
+.rules-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rule-section {
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.rule-section h4 {
+  margin: 0 0 0.75rem 0;
+  color: #60a5fa;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.rule-section p {
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+
+.rule-section ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.rule-section li {
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.rule-section li:last-child {
+  margin-bottom: 0;
+}
+
+.rule-section strong {
+  color: #fbbf24;
+  font-weight: 600;
+}

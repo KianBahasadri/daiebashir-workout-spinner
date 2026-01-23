@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
+import { RulesTab } from './RulesTab'
+import { useRouletteSound } from './useRouletteSound'
 import { type Exercise, type ExplanationKey, type MathStats } from './types.tsx'
 
 const EXERCISES: Exercise[] = [
@@ -14,7 +16,15 @@ const EXERCISES: Exercise[] = [
   { name: 'shawarama', color: '#F7DC6F', weight: 0.25, duration: 0, isExitCondition: true },
 ]
 
-const LENGTH_CURVE_POINTS = 20
+const LENGTH_CURVE_TARGET_CDF = 0.95
+
+const spinsForCdf = (p: number, targetCdf: number) => {
+  if (!Number.isFinite(p) || p <= 0) return Number.POSITIVE_INFINITY
+  if (p >= 1) return 1
+  const clampedTarget = Math.max(0, Math.min(0.999999, targetCdf))
+  // Smallest k such that 1 - (1 - p)^k >= targetCdf
+  return Math.max(1, Math.ceil(Math.log(1 - clampedTarget) / Math.log(1 - p)))
+}
 
 const clampWeight = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0)
 
@@ -81,7 +91,7 @@ function App() {
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
-  const [mathTab, setMathTab] = useState<'sessions' | 'exercises'>('sessions')
+  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules'>('sessions')
   const [currentIndex, setCurrentIndex] = useState(4 * EXERCISES.length)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
@@ -89,6 +99,7 @@ function App() {
   const [stride, setStride] = useState(CARD_WIDTH + CARD_GAP)
   const reelRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
+  const { playSpinSound, stopSpinSound } = useRouletteSound()
 
   const trackItems = useMemo(() => {
     const items: Array<{ name: string; color: string; key: string }> = []
@@ -209,7 +220,10 @@ function App() {
       })
       .sort((a, b) => b.weight - a.weight || b.exercises.length - a.exercises.length)
 
-    const lengthCurve = Array.from({ length: LENGTH_CURVE_POINTS }, (_, i) => {
+    const k95 = spinsForCdf(exitProbability, LENGTH_CURVE_TARGET_CDF)
+    const lengthCurvePoints = Number.isFinite(k95) ? k95 : 20
+
+    const lengthCurve = Array.from({ length: lengthCurvePoints }, (_, i) => {
       const spins = i + 1
       const probabilityEndOnSpin =
         exitProbability > 0 ? Math.pow(1 - exitProbability, spins - 1) * exitProbability : 0
@@ -244,6 +258,9 @@ function App() {
     setIsSpinning(true)
     setSelectedExercise(null)
     setSelectedIndex(null)
+
+    // Start the roulette sound effect
+    playSpinSound()
 
     const loops = MIN_LOOPS + Math.floor(Math.random() * (MAX_LOOPS - MIN_LOOPS + 1))
     const exerciseIndex = pickExerciseIndex()
@@ -285,6 +302,9 @@ function App() {
       setCurrentIndex(snappedIndex)
       setSelectedIndex(snappedIndex)
       setIsSpinning(false)
+
+      // Stop the sound effect
+      stopSpinSound()
     }, SPIN_DURATION_MS)
   }
 
@@ -349,12 +369,18 @@ function App() {
           >
             Exercises
           </button>
+          <button
+            className={`math-tab${mathTab === 'rules' ? ' active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setMathTab('rules'); }}
+            type="button"
+          >
+            Rules
+          </button>
         </div>
 
         {mathTab === 'sessions' && (
           <SessionsTab
             math={math}
-            lengthCurvePoints={LENGTH_CURVE_POINTS}
             activePopup={activePopup}
             setActivePopup={setActivePopup}
           />
@@ -366,6 +392,10 @@ function App() {
             activePopup={activePopup}
             setActivePopup={setActivePopup}
           />
+        )}
+
+        {mathTab === 'rules' && (
+          <RulesTab />
         )}
       </section>
     </div>
