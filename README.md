@@ -125,10 +125,10 @@ Since the workout only ends when they hit "Shawarma," users might get discourage
 
 **Problem**: No reason to keep coming back  
 **Solution**: Exercise banking system with "Sunk Cost" mechanics
-- **"Bank" Mechanic**: Allow users to "Bank" exercises. If they roll 5 runs, let them save 2 for tomorrow. This keeps them coming back to "pay off their debt"
-- Save completed workouts to `localStorage`
-- Track "banked" exercises for streak bonuses
-- **Session History**: Save the total number of "Shawarmas earned." A counter like **"Total Shawarmas Consumed: 14"** provides a sense of long-term progression
+- **"Bank" Mechanic**: Allow users to "Bank" exercises. If they roll 5 runs, let them save 2 for tomorrow. This keeps them coming back to "pay off their debt"  
+- Save completed workouts to `localStorage`  
+- Track "banked" exercises for streak bonuses  
+- **Session History**: Save the total number of "Shawarmas earned." A counter like **"Total Shawarmas Consumed: 14"** provides a sense of long-term progression  
 - Show historical stats: total spins, rarest hit, current streak
 
 **Implementation**: Add `useLocalStorage` hook, create `WorkoutHistory` type, persist on each spin. Use `localStorage` to wrap your `exercises` state in `App.tsx`.
@@ -142,7 +142,17 @@ Since the workout only ends when they hit "Shawarma," users might get discourage
 - Tease Godly tier but keep it mythical
 
 #### 5. Social Proof (Even for One User)
-**Shareable "Receipts"**: Generate a text summary or an image of the final workout list (e.g., *"I had to do 40 mins of squats before I unlocked my Shawarma"*). Even if you are the only user, being able to screenshot a ridiculous "bad luck" run creates a narrative and shareable moment.
+**Shareable "Receipts"**: Generate a text summary or an image of the final workout list (e.g., *"I had to do 40 mins of squats before I unlocked my Shawarma"*). Even if you are the only user, being able to "see" the work you did creates satisfaction.
+
+#### 6. The RHAM Framework (Responsible Healthy Adult Manipulation)
+To further encourage engagement through the "Illusion of Control" and "Sunk Cost" fallacies:
+
+- **Bulk Spin (3x Fast-Track)**: Let users spin 3 times at once. It feels like a 3x higher chance of landing on shawarma, but it's the same probability per spin while instantly creating a larger "Exercise Debt" that the user is more likely to commit to.
+- **Exercise Marketplace (Trading Up/Down)**: Allow users to trade exercises. Trade a high-intensity "Epic" for two lower-intensity "Rares" (Trade Down) or sacrifice a "Common" to "Buy a Reroll" with a multiplier on the next result (Trade Up).
+- **The "Near Miss"**: If the spin lands adjacent to a Legendary/Godly item, trigger a special animation and sound. Near misses trigger similar dopamine responses to wins.
+- **Pity Timer (Pseudo-Randomness)**: Every time a user lands on a "Common" exercise, slightly increase the weight of the Shawarma tier for the next spin.
+- **Insurance (Pre-Commitment)**: Offer "Shawarma Insurance" (e.g., do 20 jumping jacks now) for a free re-roll if they land on a long cardio exercise later.
+- **Daily Double (Happy Hour)**: Double Shawarma odds during a specific hour (e.g., 5-6 PM) to condition a consistent workout habit.
 
 ### Immediate Code Recommendations
 
