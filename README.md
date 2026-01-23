@@ -22,14 +22,21 @@ https://daiebashir-workout-spinner.pages.dev
 
 ### Functionality Overview
 
-This app follows a compelling core loop: **Spin → RNG → Rarity → Accumulation**
+This application is a **stochastic workout generator** built with **React, TypeScript, and Vite**. It gamifies exercise by treating a workout session like a series of "loot box" openings or slot machine spins.
 
-1. **Spin**: User clicks to initiate the roulette-style spinner
-2. **RNG**: A two-stage random selection occurs:
+**The Core Loop: Spin → RNG → Rarity → Accumulation**
+
+1. **The Spin**: User clicks a button to spin the roulette-style wheel
+2. **RNG Logic**: The app selects an exercise based on a weighted probability table defined in `src/types.tsx`:
    - First, a rarity tier is selected based on fixed probabilities (Common 50%, Rare 35%, Epic 10%, Legendary 4%, Godly 1%)
    - Then, a random exercise is chosen from that tier
-3. **Rarity**: Each exercise belongs to a tier that determines its probability and visual presentation
-4. **Accumulation**: Exercises accumulate until an exit condition (Shawarma or Shawarma + Beer) is hit
+3. **Rarity System**: Exercises are categorized into tiers with specific drop rates:
+   - **Common (50%)**: Low intensity cardio (e.g., 10 mins run)
+   - **Rare (35%)**: Moderate intensity bodyweight (e.g., 1 min plank)
+   - **Epic (10%)**: Strength training (e.g., bench press)
+   - **Legendary (4%)**: "Shawarma" (Exit Condition)
+   - **Godly (1%)**: "Shawarma + Beer" (Exit Condition)
+4. **Accumulation**: If a non-exit exercise is rolled, it is added to the "To Do" list. The user must keep spinning and accumulating exercises until they hit an **Exit Condition** (Legendary or Godly)
 
 The app takes a **math-first approach** with rigorous probability modeling:
 - Geometric distributions for workout length prediction
@@ -37,56 +44,71 @@ The app takes a **math-first approach** with rigorous probability modeling:
 - Weighted averages for duration calculations
 - Expected value computations for "workouts until shawarma"
 
-All mathematical formulas are not just calculated but also **displayed and explained** in the UI, making the probability mechanics transparent to users.
+**Math Transparency**: A dedicated tab (`SessionsTab.tsx`) calculates and displays the expected value (EV) of the workout, such as "Average exercises before Shawarma" and "Likelihood the game ends on spin X," utilizing geometric distributions. All mathematical formulas are not just calculated but also **displayed and explained** in the UI, making the probability mechanics transparent to users.
 
 ### Strengths & Weaknesses
 
 **Strengths:**
 - ✅ **Solid Engineering**: TypeScript throughout, clean component architecture, proper separation of concerns
 - ✅ **Math Transparency**: Comprehensive probability calculations with visual explanations
-- ✅ **Audio Feedback**: Custom Web Audio API implementation for roulette tick sounds
+- ✅ **Audio Feedback**: Custom Web Audio API implementation (`useRouletteSound.ts`) for procedural roulette tick sounds - far more responsive and performant than playing static MP3 files
 - ✅ **Rarity System**: Well-balanced tier probabilities that create anticipation
 - ✅ **Visual Polish**: Smooth animations, color-coded rarity tiers, responsive design
+- ✅ **Zero-Friction UI**: No login, no setup wizard, and no complex configuration - you open the app and click "Spin"
 - ✅ **Deployment**: Production-ready with Cloudflare Pages integration
 
 **Weaknesses:**
-- ❌ **No Persistence**: Sessions aren't saved; refreshing loses all progress
-- ❌ **Hardcoded Configuration**: Exercises are defined in code, not configurable
-- ❌ **Limited Visual Feedback**: High-tier spins lack extra visual impact
+- ❌ **No Persistence**: Sessions aren't saved; refreshing loses all progress. No usage of `localStorage` or database calls anywhere in the codebase
+- ❌ **Hardcoded Configuration**: Exercises are hardcoded in `App.tsx` - changing exercises requires editing source code and redeploying
+- ❌ **Limited Visual Feedback**: High-tier spins lack extra visual impact - difference between Common and Godly is just text and background color
 - ❌ **No Progress Tracking**: Can't see historical workout data or streaks
+- ❌ **Single Audio Texture**: While the tick sound is good, it's the only sound - no auditory distinction between landing on Common vs Godly
 - ❌ **Static Engagement**: After the initial novelty, no progression system
 
 ### Engagement Strategy (The Dopamine Strategy)
 
 The key to long-term engagement is implementing **Variable Ratio Reinforcement**—the same psychological principle behind slot machines and loot boxes. Here's the roadmap:
 
-#### 1. Visual Effects for High-Tier Spins
+#### 1. Visual "Juice" & Celebration
+Currently, the difference between a Common and Godly pull is just text and background color. You need to make the rare events feel massive.
+
 **Problem**: Landing a Legendary or Godly exercise feels the same as Common ones  
 **Solution**: Escalating visual feedback
 - **Epic (10%)**: Subtle glow effect around the card
 - **Legendary (4%)**: Confetti burst + screen shake
 - **Godly (1%)**: Full-screen confetti + intense shake + color flash
 
+**Additional Enhancement - "Loot Box" Reveal**: Instead of showing the result immediately, show a glowing orb or a shaking box that takes 1-2 seconds to open. This builds anticipation (the highest dopamine spike actually occurs *before* the reward).
+
 **Implementation**: Use libraries like `canvas-confetti` or `react-confetti`
 
 #### 2. Auditory Conditioning
+Sound is critical for gambling psychology.
+
 **Problem**: All spins sound the same  
 **Solution**: Tiered sound effects
-- **Common/Rare**: Current tick sound (white noise bandpass)
-- **Epic**: Add a subtle chime on land
+- **Common**: Standard wooden tick (current tick sound)
+- **Rare**: Metallic ping
+- **Epic**: Heavy thud or chord / subtle chime on land
 - **Legendary**: Triumphant fanfare
-- **Godly**: Orchestral hit + reverb tail
+- **Godly**: Orchestral hit + reverb tail / choir sample or high-pitched "ding" sequence (like a coin payout)
 
-**Implementation**: Extend `useRouletteSound.ts` with `playLandingSound(rarity)` using pre-recorded samples or more complex synthesis
+**The "Near Miss" Enhancement**: If the math determines the user *almost* got a Godly (e.g., they rolled a 0.98 and needed 0.99), play a sound that suggests they were close. This psychological trick keeps users engaged.
 
-#### 3. Persistence & Banking
+**Implementation**: Extend `useRouletteSound.ts` with `playLandingSound(rarity)` using pre-recorded samples or more complex synthesis. Modify the hook to support pitch-shifting or different waveforms for each tier.
+
+#### 3. The "Sunk Cost" Hook (Persistence & Banking)
+Since the workout only ends when they hit "Shawarma," users might get discouraged if the list gets too long (e.g., 2 hours of cardio accumulated).
+
 **Problem**: No reason to keep coming back  
-**Solution**: Exercise banking system
+**Solution**: Exercise banking system with "Sunk Cost" mechanics
+- **"Bank" Mechanic**: Allow users to "Bank" exercises. If they roll 5 runs, let them save 2 for tomorrow. This keeps them coming back to "pay off their debt"
 - Save completed workouts to `localStorage`
 - Track "banked" exercises for streak bonuses
+- **Session History**: Save the total number of "Shawarmas earned." A counter like **"Total Shawarmas Consumed: 14"** provides a sense of long-term progression
 - Show historical stats: total spins, rarest hit, current streak
 
-**Implementation**: Add `useLocalStorage` hook, create `WorkoutHistory` type, persist on each spin
+**Implementation**: Add `useLocalStorage` hook, create `WorkoutHistory` type, persist on each spin. Use `localStorage` to wrap your `exercises` state in `App.tsx`.
 
 #### 4. Progressive Disclosure
 **Problem**: All features visible immediately  
@@ -96,22 +118,58 @@ The key to long-term engagement is implementing **Variable Ratio Reinforcement**
 - Unlock Legendary after hitting Epic 3 times
 - Tease Godly tier but keep it mythical
 
+#### 5. Social Proof (Even for One User)
+**Shareable "Receipts"**: Generate a text summary or an image of the final workout list (e.g., *"I had to do 40 mins of squats before I unlocked my Shawarma"*). Even if you are the only user, being able to screenshot a ridiculous "bad luck" run creates a narrative and shareable moment.
+
 ### Immediate Code Recommendations
 
 **High Priority (Core Engagement):**
-1. Add `localStorage` persistence for workout sessions
+1. **Add Persistence:**
+   Create a `useLocalStorage` hook to wrap your `exercises` state in `App.tsx`.
    ```typescript
-   // Add to App.tsx
-   const [history, setHistory] = useLocalStorage<WorkoutSession[]>('workout-history', [])
+   // Simple implementation idea
+   const [history, setHistory] = useState(() => {
+     const saved = localStorage.getItem('workout-history');
+     return saved ? JSON.parse(saved) : [];
+   });
    ```
 
-2. Implement confetti for high-tier spins
+2. **Deploy Confetti:**
+   Install the library and trigger on high-tier spins:
    ```bash
    pnpm add canvas-confetti
    pnpm add -D @types/canvas-confetti
    ```
+   
+   Then trigger when `isExitCondition` is true:
+   ```typescript
+   import confetti from 'canvas-confetti';
+   
+   // Inside your spin logic
+   if (selectedExercise.rarity === 'godly') {
+     confetti({
+       particleCount: 100,
+       spread: 70,
+       origin: { y: 0.6 }
+     });
+   }
+   ```
 
-3. Add visual polish for Legendary+ items
+3. **Visual Polish for Godly Tier:**
+   In `App.tsx`, inside your render loop, add a conditional class for the `godly` rarity that enables an animation:
+   ```css
+   .godly-card {
+     animation: shine 2s infinite;
+     border: 2px solid gold;
+     box-shadow: 0 0 15px gold;
+   }
+   @keyframes shine {
+     0% { background-position: 0% 50%; }
+     100% { background-position: 100% 50%; }
+   }
+   ```
+   
+   For Legendary+ items:
    ```css
    .reel-item[data-rarity="legendary"] {
      animation: legendary-glow 1s ease-in-out;
