@@ -33,6 +33,7 @@ export type RarityGroup = {
 export type LengthCurvePoint = {
   spins: number
   probabilityEndOnSpin: number
+  cumulativeProbability: number
   durationAtSpin: number
 }
 

@@ -368,9 +368,10 @@ function App() {
       const spins = i + 1
       const probabilityEndOnSpin =
         exitProbability > 0 ? Math.pow(1 - exitProbability, spins - 1) * exitProbability : 0
+      const cumulativeProbability = cdf(spins)
       // Expected duration if workout ends on this spin (spins - 1 exercises completed before exit)
       const durationAtSpin = (spins - 1) * expectedDurationPerSpin
-      return { spins, probabilityEndOnSpin, durationAtSpin }
+      return { spins, probabilityEndOnSpin, cumulativeProbability, durationAtSpin }
     })
 
     return {

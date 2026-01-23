@@ -242,6 +242,130 @@ export function SessionsTab({ math, activePopup, setActivePopup }: SessionsTabPr
           )
         })()}
 
+        <h3>
+          Cumulative probability (CDF)
+          <InfoPopup explanationKey="cdf" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
+        </h3>
+        <p className="math-subtitle">
+          Total probability the workout has ended by spin <span className="math-mono">n</span>.
+          Targeting <span className="math-mono">95%</span> confidence at spin <span className="math-mono">{math.lengthCurve.length}</span>.
+        </p>
+
+        {(() => {
+          const lengthCurvePoints = Math.max(1, math.lengthCurve.length)
+          const chartW = 800
+          const chartH = 200
+          const pad = 20
+          const innerW = chartW - pad * 2
+          const innerH = chartH - pad * 2
+
+          // CDF always goes from 0 to 1 (or near 1)
+          const safeMax = 1
+
+          const points = math.lengthCurve
+            .map((point, idx) => {
+              const t = math.lengthCurve.length > 1 ? idx / (math.lengthCurve.length - 1) : 0
+              const x = pad + t * innerW
+              const y = pad + innerH - (point.cumulativeProbability / safeMax) * innerH
+              return `${x.toFixed(2)},${y.toFixed(2)}`
+            })
+            .join(' ')
+
+          // Generate x-axis labels (every 2 spins)
+          const xAxisLabels = []
+          const xStep = Math.max(2, Math.floor(lengthCurvePoints / 10))
+          for (let i = 1; i <= lengthCurvePoints; i += xStep) {
+            const t = (i - 1) / (lengthCurvePoints - 1)
+            xAxisLabels.push({ value: i, x: pad + t * innerW })
+          }
+          if (xAxisLabels[xAxisLabels.length - 1]?.value !== lengthCurvePoints) {
+            const t = (lengthCurvePoints - 1) / (lengthCurvePoints - 1)
+            xAxisLabels.push({ value: lengthCurvePoints, x: pad + t * innerW })
+          }
+
+          // Y-axis labels for CDF (0, 0.25, 0.5, 0.75, 1.0)
+          const yAxisLabels = [0, 0.25, 0.5, 0.75, 1.0].map(prob => ({
+            value: prob,
+            y: pad + innerH - (prob / safeMax) * innerH
+          }))
+
+          return (
+            <svg
+              className="math-chart"
+              viewBox={`0 0 ${chartW} ${chartH}`}
+              preserveAspectRatio="xMidYMid meet"
+              role="img"
+              aria-label={`Cumulative probability the workout has ended by spin n (n = 1..${lengthCurvePoints}).`}
+            >
+              <rect x="0" y="0" width={chartW} height={chartH} rx="10" ry="10" />
+
+              <g opacity="0.2">
+                {xAxisLabels.map((label) => (
+                  <line
+                    key={`grid-x-${label.value}`}
+                    x1={label.x}
+                    y1={pad}
+                    x2={label.x}
+                    y2={chartH - pad}
+                    stroke="rgba(148, 163, 184, 0.3)"
+                    strokeWidth="1"
+                  />
+                ))}
+                {yAxisLabels.map((label, idx) => (
+                  <line
+                    key={`grid-y-${idx}`}
+                    x1={pad}
+                    y1={label.y}
+                    x2={chartW - pad}
+                    y2={label.y}
+                    stroke="rgba(148, 163, 184, 0.3)"
+                    strokeWidth="1"
+                  />
+                ))}
+              </g>
+
+              <g>
+                <line x1={pad} y1={chartH - pad} x2={chartW - pad} y2={chartH - pad} strokeWidth="2" />
+                <line x1={pad} y1={pad} x2={pad} y2={chartH - pad} strokeWidth="2" />
+              </g>
+
+              <g>
+                {yAxisLabels.map((label, idx) => (
+                  <g key={`y-label-${idx}`}>
+                    <line x1={pad - 5} y1={label.y} x2={pad} y2={label.y} strokeWidth="1.5" />
+                    <text
+                      x={pad - 10}
+                      y={label.y + 4}
+                      textAnchor="end"
+                      style={{ fontSize: '11px', fill: 'rgba(226, 232, 240, 0.9)' }}
+                    >
+                      {formatPercent(label.value)}
+                    </text>
+                  </g>
+                ))}
+              </g>
+
+              <g>
+                {xAxisLabels.map((label) => (
+                  <g key={`x-label-${label.value}`}>
+                    <line x1={label.x} y1={chartH - pad} x2={label.x} y2={chartH - pad + 5} strokeWidth="1.5" />
+                    <text
+                      x={label.x}
+                      y={chartH - pad + 18}
+                      textAnchor="middle"
+                      style={{ fontSize: '11px', fill: 'rgba(226, 232, 240, 0.9)' }}
+                    >
+                      {label.value}
+                    </text>
+                  </g>
+                ))}
+              </g>
+
+              <polyline points={points} style={{ stroke: '#4A90E2' }} />
+            </svg>
+          )
+        })()}
+
         <div className="math-mini-table" aria-label="Chance the workout has ended within N spins">
           <div>
             <span className="math-mono">P(L ≤ {medianSpinsLabel})</span>: {formatPercent(medianChance)}
@@ -254,7 +378,6 @@ export function SessionsTab({ math, activePopup, setActivePopup }: SessionsTabPr
           <div>
             <span className="math-mono">P(L ≤ {math.lengthCurve.length})</span>: {formatPercent(math.chanceEndWithin(math.lengthCurve.length))}
             <span className="math-duration">≤ {((Math.max(0, math.lengthCurve.length - 1)) * math.expectedDurationPerSpin).toFixed(0)} min</span>
-            <InfoPopup explanationKey="cdf" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
           </div>
         </div>
       </div>
