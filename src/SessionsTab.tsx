@@ -60,9 +60,6 @@ export function SessionsTab({ math, activePopup, setActivePopup }: SessionsTabPr
           </div>
         </dl>
 
-        <p className="math-note">
-          Assumes each spin is independent, using the same weights each time.
-        </p>
       </div>
 
       <div className="math-card math-card--full">

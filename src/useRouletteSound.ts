@@ -42,27 +42,27 @@ export function useRouletteSound() {
     return audioContext
   }, [])
 
-  const playTick = useCallback(() => {
+  const playTick = useCallback((delayS = 0) => {
     const audioContext = initAudioContext()
     const masterGain = masterGainRef.current
     const noiseBuffer = tickNoiseBufferRef.current
 
     if (!audioContext || !masterGain || !noiseBuffer) return
 
-    const now = audioContext.currentTime
+    const now = audioContext.currentTime + delayS
 
     const source = audioContext.createBufferSource()
     source.buffer = noiseBuffer
 
     const filter = audioContext.createBiquadFilter()
     filter.type = 'bandpass'
-    filter.frequency.setValueAtTime(3200, now)
+    filter.frequency.setValueAtTime(3200 + Math.random() * 400, now)
     filter.Q.setValueAtTime(18, now)
 
     const gain = audioContext.createGain()
     gain.gain.setValueAtTime(0.0001, now)
     gain.gain.exponentialRampToValueAtTime(1, now + 0.001)
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015)
 
     source.connect(filter)
     filter.connect(gain)

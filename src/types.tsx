@@ -26,6 +26,7 @@ export type RarityGroup = {
   exercises: Exercise[]
   perItemProbability: number
   groupProbability: number
+  expectedHitsPerWorkout: number
   hasExitConditions: boolean
 }
 
@@ -245,7 +246,52 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   rarity: {
     title: 'Rarity System',
-    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (35%), Epic (10%), Legendary (4%), Godly (1%).`,
+    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (35%), Epic (10%), Legendary (4%), Godly (1%). Expected hits = avg exercises × probability per exercise.`,
+    formula: (math) => {
+      const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
+      return {
+        general: (
+          <>
+            <Var>hits</Var> <Op>=</Op> <Var>E</Var>[exercises] <Op>×</Op> <Var>p</Var><Sub>rarity</Sub>
+          </>
+        ),
+        substituted: (
+          <>
+            <Var>hits</Var> <Op>=</Op> <Num>{Number.isFinite(math.expectedExercisesBeforeEnd) ? math.expectedExercisesBeforeEnd.toFixed(2) : '∞'}</Num> <Op>×</Op> <Num>{sampleGroup ? formatPercent(sampleGroup.perItemProbability) : 'N/A'}</Num>
+          </>
+        ),
+        result: (
+          <>
+            <Op>=</Op> <Num>{sampleGroup ? (Number.isFinite(sampleGroup.expectedHitsPerWorkout) ? sampleGroup.expectedHitsPerWorkout.toFixed(2) : '∞') : 'N/A'}</Num> per workout
+          </>
+        ),
+      }
+    },
+  },
+  workoutsUntilHit: {
+    title: 'Workouts Until Hit',
+    content: `The expected number of complete workout sessions before landing on this exercise at least once.`,
+    formula: (math) => {
+      const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
+      const hitsPerWorkout = sampleGroup?.expectedHitsPerWorkout ?? 0
+      return {
+        general: (
+          <>
+            <Var>workouts</Var> <Op>=</Op> <Frac num={<Num>1</Num>} den={<><Var>hits</Var><Sub>per workout</Sub></>} />
+          </>
+        ),
+        substituted: (
+          <>
+            <Var>workouts</Var> <Op>=</Op> <Frac num={<Num>1</Num>} den={<Num>{Number.isFinite(hitsPerWorkout) ? hitsPerWorkout.toFixed(2) : '∞'}</Num>} />
+          </>
+        ),
+        result: (
+          <>
+            <Op>=</Op> <Num>{hitsPerWorkout > 0 ? (1 / hitsPerWorkout).toFixed(1) : '∞'}</Num>
+          </>
+        ),
+      }
+    },
   },
 }
 

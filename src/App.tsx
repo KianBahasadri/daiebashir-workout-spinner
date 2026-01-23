@@ -67,7 +67,7 @@ const pickExerciseIndex = (exercises: Exercise[]) => {
 const SPIN_DURATION_MS = 4000
 const CARD_WIDTH = 160
 const CARD_GAP = 16
-const TRACK_REPEATS = 500
+const TRACK_REPEATS = 100
 const MIN_LOOPS = 4
 const MAX_LOOPS = 7
 
@@ -337,11 +337,21 @@ function App() {
         // Check if this group contains exit conditions
         const hasExitConditions = exercises.some(e => e.isExitCondition)
 
+        // Expected hits per workout:
+        // - For exit conditions: P(ending with this exit) = rarityProbability (shawarma is only exit)
+        // - For regular exercises: expectedExercisesBeforeEnd × perItemProbability
+        const expectedHitsPerWorkout = hasExitConditions
+          ? rarityProbability
+          : Number.isFinite(expectedExercisesBeforeEnd)
+            ? expectedExercisesBeforeEnd * perItemProbability
+            : Number.POSITIVE_INFINITY
+
         return {
           rarity,
           exercises,
           perItemProbability,
           groupProbability,
+          expectedHitsPerWorkout,
           hasExitConditions
         }
       })

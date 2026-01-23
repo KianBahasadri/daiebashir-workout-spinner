@@ -16,7 +16,7 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
           <InfoPopup explanationKey="rarity" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
         </h3>
         <p className="math-subtitle">
-          Probability breakdown for each exercise, grouped by rarity tier.
+          Expected hits per workout for each exercise, grouped by rarity tier.
         </p>
 
         <div className="weight-groups">
@@ -41,6 +41,14 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
                 </div>
                 <div className="weight-group-stats">
                   <span><span className="math-mono">{formatPercent(group.perItemProbability)}</span> per exercise</span>
+                  <span className="separator">|</span>
+                  <span>
+                    <span className="math-mono">
+                      {Number.isFinite(group.expectedHitsPerWorkout) 
+                        ? group.expectedHitsPerWorkout.toFixed(2) 
+                        : '∞'}
+                    </span> hits per workout
+                  </span>
                 </div>
                 <div className="weight-group-items-compact">
                   {group.exercises.map((exercise) => (
