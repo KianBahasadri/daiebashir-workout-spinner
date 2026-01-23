@@ -228,3 +228,9 @@ To further encourage engagement through the "Illusion of Control" and "Sunk Cost
 ---
 
 **Next Steps**: Start with persistence (`localStorage`) and confetti effects. These provide the highest ROI for user engagement with minimal code changes.
+
+
+
+
+AN IDEA:
+special mode, each roll costs $1, which is saved in your bank. once you land on shawarma, your bank pays for the shawarma.
