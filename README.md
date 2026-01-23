@@ -24,14 +24,14 @@ https://daiebashir-workout-spinner.pages.dev
 
 ### The Ethical Framework
 
-Traditional gambling exploits psychological mechanisms (variable ratio reinforcement, rarity systems, anticipation mechanics) to encourage monetary spending, which raises serious ethical concerns. Workout Spinner intentionally "misuses" these same psychological principles—but with a crucial difference: **instead of extracting money, it encourages healthy behavior**.
+Traditional gambling exploits psychological mechanisms (variable ratio reinforcement, rarity systems, anticipation mechanics) to encourage monetary spending, which raises serious ethical concerns. Workout Spinner intentionally misuses these same psychological principles—but with a crucial difference: **instead of extracting money, it encourages healthy behavior**.
 
 **Key Ethical Distinctions:**
 
 - **100% Free**: There is no monetary component whatsoever. No purchases, no microtransactions, no paid advantages. You cannot spend money even if you wanted to.
 - **Positive Outcome**: The "addictive" behavior being encouraged is exercise—objectively beneficial for physical and mental health.
 - **Transparent Design**: The probability mathematics are openly displayed and explained in the app. Users can see exactly how the randomization works.
-- **No Exploitation**: Since there's no financial component, being "psychologically manipulative" to increase engagement means users exercise more, not lose money.
+- **No Exploitation**: Since there's no financial component, being psychologically manipulative to increase engagement means users exercise more, not lose money.
 
 ### The Goal
 
