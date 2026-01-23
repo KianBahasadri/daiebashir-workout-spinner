@@ -4,8 +4,8 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'godly'
 
 export const RARITY_CONFIG = {
   common: { name: 'Common', color: '#FFFFFF', probability: 0.5, category: 'Cardio' },
-  rare: { name: 'Rare', color: '#4A90E2', probability: 0.35, category: 'Bodyweight' },
-  epic: { name: 'Epic', color: '#9B59B6', probability: 0.1, category: 'Strength' },
+  rare: { name: 'Rare', color: '#4A90E2', probability: 0.3, category: 'Bodyweight' },
+  epic: { name: 'Epic', color: '#9B59B6', probability: 0.15, category: 'Strength' },
   legendary: { name: 'Legendary', color: '#FF3B30', probability: 0.04, category: 'Reward' },
   godly: { name: 'Godly', color: '#FFD700', probability: 0.01, category: 'Ultimate' }
 } as const
@@ -246,7 +246,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   rarity: {
     title: 'Rarity System',
-    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (35%), Epic (10%), Legendary (4%), Godly (1%). Expected hits = avg exercises × probability per exercise.`,
+    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (30%), Epic (15%), Legendary (4%), Godly (1%). Expected hits = avg exercises × probability per exercise.`,
     formula: (math) => {
       const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
       return {

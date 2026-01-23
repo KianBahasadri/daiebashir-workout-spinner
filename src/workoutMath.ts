@@ -133,3 +133,41 @@ export function calculateMathStats(exercises: Exercise[]): MathStats {
   }
 }
 
+export function pickExerciseIndex(exercises: Exercise[]): number {
+  // Group exercises by rarity
+  const exercisesByRarity = exercises.reduce(
+    (acc, exercise) => {
+      if (!acc[exercise.rarity]) {
+        acc[exercise.rarity] = []
+      }
+      acc[exercise.rarity].push(exercise)
+      return acc
+    },
+    {} as Record<string, Exercise[]>,
+  )
+
+  // Calculate cumulative probabilities for each rarity tier
+  const roll = Math.random()
+  let cumulativeProbability = 0
+
+  // Check each rarity tier in order: common, rare, epic, legendary, godly
+  const rarityOrder: (keyof typeof RARITY_CONFIG)[] = ['common', 'rare', 'epic', 'legendary', 'godly']
+
+  for (const rarity of rarityOrder) {
+    if (exercisesByRarity[rarity]) {
+      const rarityProbability = RARITY_CONFIG[rarity].probability
+      cumulativeProbability += rarityProbability
+
+      if (roll < cumulativeProbability) {
+        // Select a random exercise from this rarity tier
+        const exercisesInTier = exercisesByRarity[rarity]
+        const randomIndexInTier = Math.floor(Math.random() * exercisesInTier.length)
+        const selectedExercise = exercisesInTier[randomIndexInTier]
+        return exercises.findIndex((ex) => ex === selectedExercise)
+      }
+    }
+  }
+
+  // Fallback (should not happen with proper probabilities)
+  return Math.floor(Math.random() * exercises.length)
+}

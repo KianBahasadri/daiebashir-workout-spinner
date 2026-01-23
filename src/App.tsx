@@ -3,9 +3,10 @@ import './App.css'
 import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
 import { RulesTab } from './RulesTab'
+import { SimulationTab } from './SimulationTab'
 import { useRouletteSound } from './useRouletteSound'
 import { type Exercise, type ExplanationKey, RARITY_CONFIG } from './types.tsx'
-import { calculateMathStats } from './workoutMath'
+import { calculateMathStats, pickExerciseIndex } from './workoutMath'
 
 const EXERCISES: Exercise[] = [
   // Common - Cardio exercises (white)
@@ -25,42 +26,6 @@ const EXERCISES: Exercise[] = [
   // Godly - Shawarma + Beer (gold)
   { name: 'Shawarma + Beer', color: RARITY_CONFIG.godly.color, rarity: 'godly', duration: 0, isExitCondition: true },
 ]
-
-const pickExerciseIndex = (exercises: Exercise[]) => {
-  // Group exercises by rarity
-  const exercisesByRarity = exercises.reduce((acc, exercise) => {
-    if (!acc[exercise.rarity]) {
-      acc[exercise.rarity] = []
-    }
-    acc[exercise.rarity].push(exercise)
-    return acc
-  }, {} as Record<string, Exercise[]>)
-
-  // Calculate cumulative probabilities for each rarity tier
-  const roll = Math.random()
-  let cumulativeProbability = 0
-
-  // Check each rarity tier in order: common, rare, epic, legendary, godly
-  const rarityOrder: (keyof typeof RARITY_CONFIG)[] = ['common', 'rare', 'epic', 'legendary', 'godly']
-
-  for (const rarity of rarityOrder) {
-    if (exercisesByRarity[rarity]) {
-      const rarityProbability = RARITY_CONFIG[rarity].probability
-      cumulativeProbability += rarityProbability
-
-      if (roll < cumulativeProbability) {
-        // Select a random exercise from this rarity tier
-        const exercisesInTier = exercisesByRarity[rarity]
-        const randomIndexInTier = Math.floor(Math.random() * exercisesInTier.length)
-        const selectedExercise = exercisesInTier[randomIndexInTier]
-        return exercises.findIndex(ex => ex === selectedExercise)
-      }
-    }
-  }
-
-  // Fallback (should not happen with proper probabilities)
-  return Math.floor(Math.random() * exercises.length)
-}
 
 const SPIN_DURATION_MS = 4000
 const CARD_WIDTH = 160
@@ -130,7 +95,7 @@ function App() {
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
-  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules'>('sessions')
+  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules' | 'simulation'>('sessions')
   const [currentIndex, setCurrentIndex] = useState(0)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
@@ -385,6 +350,13 @@ function App() {
           >
             Rules
           </button>
+          <button
+            className={`math-tab${mathTab === 'simulation' ? ' active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setMathTab('simulation'); }}
+            type="button"
+          >
+            Simulation
+          </button>
         </div>
 
         {mathTab === 'sessions' && (
@@ -405,6 +377,13 @@ function App() {
 
         {mathTab === 'rules' && (
           <RulesTab />
+        )}
+
+        {mathTab === 'simulation' && (
+          <SimulationTab 
+            exercises={shuffledExercises}
+            math={math}
+          />
         )}
       </section>
     </div>

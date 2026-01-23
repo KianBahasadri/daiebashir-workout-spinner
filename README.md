@@ -51,12 +51,12 @@ This application is a **stochastic workout generator** built with **React, TypeS
 
 1. **The Spin**: User clicks a button to spin the roulette-style wheel
 2. **RNG Logic**: The app selects an exercise based on a weighted probability table defined in `src/types.tsx`:
-   - First, a rarity tier is selected based on fixed probabilities (Common 50%, Rare 35%, Epic 10%, Legendary 4%, Godly 1%)
+   - First, a rarity tier is selected based on fixed probabilities (Common 50%, Rare 30%, Epic 15%, Legendary 4%, Godly 1%)
    - Then, a random exercise is chosen from that tier
 3. **Rarity System**: Exercises are categorized into tiers with specific drop rates:
    - **Common (50%)**: Low intensity cardio (e.g., 10 mins run)
-   - **Rare (35%)**: Moderate intensity bodyweight (e.g., 1 min plank)
-   - **Epic (10%)**: Strength training (e.g., bench press)
+   - **Rare (30%)**: Moderate intensity bodyweight (e.g., 1 min plank)
+   - **Epic (15%)**: Strength training (e.g., bench press)
    - **Legendary (4%)**: "Shawarma" (Exit Condition)
    - **Godly (1%)**: "Shawarma + Beer" (Exit Condition)
 4. **Accumulation**: If a non-exit exercise is rolled, it is added to the "To Do" list. The user must keep spinning and accumulating exercises until they hit an **Exit Condition** (Legendary or Godly)
@@ -97,7 +97,7 @@ Currently, the difference between a Common and Godly pull is just text and backg
 
 **Problem**: Landing a Legendary or Godly exercise feels the same as Common ones  
 **Solution**: Escalating visual feedback
-- **Epic (10%)**: Subtle glow effect around the card
+- **Epic (15%)**: Subtle glow effect around the card
 - **Legendary (4%)**: Confetti burst + screen shake
 - **Godly (1%)**: Full-screen confetti + intense shake + color flash
 
