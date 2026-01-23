@@ -173,7 +173,7 @@ function App() {
           name: exercise.name,
           color: exercise.color,
           rarity: exercise.rarity,
-          key: `${repeat}-${exercise.name}-${exercise.key}`,
+          key: `${repeat}-${exercise.name}`,
         })
       }
     }
@@ -337,21 +337,11 @@ function App() {
         // Check if this group contains exit conditions
         const hasExitConditions = exercises.some(e => e.isExitCondition)
 
-        // Expected hits per workout:
-        // - For exit conditions: P(ending with this exit) = rarityProbability (shawarma is only exit)
-        // - For regular exercises: expectedExercisesBeforeEnd × perItemProbability
-        const expectedHitsPerWorkout = hasExitConditions
-          ? rarityProbability
-          : Number.isFinite(expectedExercisesBeforeEnd)
-            ? expectedExercisesBeforeEnd * perItemProbability
-            : Number.POSITIVE_INFINITY
-
         return {
           rarity,
           exercises,
           perItemProbability,
           groupProbability,
-          expectedHitsPerWorkout,
           hasExitConditions
         }
       })
