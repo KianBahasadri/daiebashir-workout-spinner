@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { InfoPopup } from './InfoPopup'
-import { type Exercise, type MathStats, type ExplanationKey, RARITY_CONFIG } from './types.tsx'
+import { type Exercise, type MathStats, type ExplanationKey, RARITY_CONFIG } from './types'
 import { pickExerciseIndex } from './workoutMath'
 
 type SimulationTabProps = {

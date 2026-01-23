@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
 import { RulesTab } from './RulesTab'
 import { SimulationTab } from './SimulationTab'
 import { useRouletteSound } from './useRouletteSound'
-import { type Exercise, type ExplanationKey, RARITY_CONFIG } from './types.tsx'
+import { type Exercise, type ExplanationKey, RARITY_CONFIG } from './types'
 import { calculateMathStats, pickExerciseIndex } from './workoutMath'
 
 const EXERCISES: Exercise[] = [

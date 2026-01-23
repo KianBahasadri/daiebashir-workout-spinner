@@ -1,4 +1,6 @@
-import { MATH_EXPLANATIONS, type ExplanationKey, type MathStats } from './types.tsx'
+import React from 'react'
+import { type ExplanationKey, type MathStats } from './types'
+import { MATH_EXPLANATIONS } from './mathExplanations'
 
 type InfoPopupProps = {
   explanationKey: ExplanationKey

@@ -1,5 +1,5 @@
 import { geometricCdf, spinsForCdf } from './mathUtils'
-import { type Exercise, type MathStats, RARITY_CONFIG } from './types.tsx'
+import { type Exercise, type MathStats, RARITY_CONFIG } from './types'
 
 const LENGTH_CURVE_TARGET_CDF = 0.95
 

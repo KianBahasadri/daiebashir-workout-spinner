@@ -1,5 +1,7 @@
+import React from 'react'
 import { InfoPopup } from './InfoPopup'
-import { type MathStats, type ExplanationKey, formatPercent, RARITY_CONFIG } from './types.tsx'
+import { type MathStats, type ExplanationKey, RARITY_CONFIG } from './types'
+import { formatPercent } from './utils'
 
 type ExercisesTabProps = {
   math: MathStats

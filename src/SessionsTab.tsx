@@ -1,5 +1,7 @@
+import React from 'react'
 import { InfoPopup } from './InfoPopup'
-import { type MathStats, type ExplanationKey, formatPercent } from './types.tsx'
+import { type MathStats, type ExplanationKey } from './types'
+import { formatPercent } from './utils'
 import { spinsForCdf } from './mathUtils'
 
 type SessionsTabProps = {
