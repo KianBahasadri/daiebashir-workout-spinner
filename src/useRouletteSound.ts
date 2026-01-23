@@ -1,136 +1,109 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
-const SPIN_DURATION_MS = 4000
+const TICK_DURATION_S = 0.03
+const MASTER_GAIN = 1
 
 export function useRouletteSound() {
   const audioContextRef = useRef<AudioContext | null>(null)
-  const currentSoundRef = useRef<{
-    oscillator: OscillatorNode
-    gainNode: GainNode
-    filterNode: BiquadFilterNode
-    startTime: number
-  } | null>(null)
+  const masterGainRef = useRef<GainNode | null>(null)
+  const tickNoiseBufferRef = useRef<AudioBuffer | null>(null)
 
-  // Initialize audio context on first user interaction
+  // Initialize audio context on first user interaction.
+  // Also attempts to resume audio immediately (needed on many browsers).
   const initAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
-    return audioContextRef.current
+
+    const audioContext = audioContextRef.current
+
+    if (audioContext && audioContext.state === 'suspended') {
+      // Best-effort; must be called from a user gesture to reliably work.
+      void audioContext.resume()
+    }
+
+    if (audioContext && !masterGainRef.current) {
+      const masterGain = audioContext.createGain()
+      masterGain.gain.setValueAtTime(MASTER_GAIN, audioContext.currentTime)
+      masterGain.connect(audioContext.destination)
+      masterGainRef.current = masterGain
+    }
+
+    if (audioContext && !tickNoiseBufferRef.current) {
+      const length = Math.max(1, Math.floor(audioContext.sampleRate * TICK_DURATION_S))
+      const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < length; i += 1) {
+        data[i] = Math.random() * 2 - 1
+      }
+      tickNoiseBufferRef.current = buffer
+    }
+
+    return audioContext
   }, [])
 
-  // Generate a roulette spinning sound that starts fast and slows down
-  const playSpinSound = useCallback(() => {
+  const playTick = useCallback(() => {
     const audioContext = initAudioContext()
-    if (!audioContext) return
+    const masterGain = masterGainRef.current
+    const noiseBuffer = tickNoiseBufferRef.current
 
-    // Stop any existing sound
-    stopSpinSound()
+    if (!audioContext || !masterGain || !noiseBuffer) return
 
     const now = audioContext.currentTime
 
-    // Create nodes
-    const oscillator = audioContext.createOscillator()
-    const gainNode = audioContext.createGain()
-    const filterNode = audioContext.createBiquadFilter()
+    const source = audioContext.createBufferSource()
+    source.buffer = noiseBuffer
 
-    // Configure filter (low-pass to create spinning effect)
-    filterNode.type = 'lowpass'
-    filterNode.frequency.setValueAtTime(2000, now)
-    filterNode.Q.setValueAtTime(1, now)
+    const filter = audioContext.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(3200, now)
+    filter.Q.setValueAtTime(18, now)
 
-    // Configure oscillator (starting with higher frequency, slowing down)
-    oscillator.type = 'sawtooth'
-    oscillator.frequency.setValueAtTime(800, now) // Start fast
-    oscillator.frequency.exponentialRampToValueAtTime(200, now + SPIN_DURATION_MS / 1000) // Slow down
+    const gain = audioContext.createGain()
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(1, now + 0.001)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02)
 
-    // Configure gain (fade in and out)
-    gainNode.gain.setValueAtTime(0, now)
-    gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1) // Quick fade in
-    gainNode.gain.setValueAtTime(0.3, now + (SPIN_DURATION_MS - 500) / 1000) // Hold
-    gainNode.gain.linearRampToValueAtTime(0, now + SPIN_DURATION_MS / 1000) // Fade out
+    source.connect(filter)
+    filter.connect(gain)
+    gain.connect(masterGain)
 
-    // Configure filter frequency (also slow down effect)
-    filterNode.frequency.setValueAtTime(2000, now)
-    filterNode.frequency.exponentialRampToValueAtTime(300, now + SPIN_DURATION_MS / 1000)
+    source.start(now)
+    source.stop(now + TICK_DURATION_S)
 
-    // Add some randomness with a second oscillator for texture
-    const noiseOscillator = audioContext.createOscillator()
-    const noiseGain = audioContext.createGain()
-    const noiseFilter = audioContext.createBiquadFilter()
-
-    noiseOscillator.type = 'square'
-    noiseOscillator.frequency.setValueAtTime(100 + Math.random() * 50, now)
-    noiseGain.gain.setValueAtTime(0.1, now)
-    noiseFilter.type = 'highpass'
-    noiseFilter.frequency.setValueAtTime(1000, now)
-
-    // Connect the audio graph
-    oscillator.connect(filterNode)
-    filterNode.connect(gainNode)
-    gainNode.connect(audioContext.destination)
-
-    noiseOscillator.connect(noiseFilter)
-    noiseFilter.connect(noiseGain)
-    noiseGain.connect(audioContext.destination)
-
-    // Store reference to stop later
-    currentSoundRef.current = {
-      oscillator,
-      gainNode,
-      filterNode,
-      startTime: now
-    }
-
-    // Start the oscillators
-    oscillator.start(now)
-    noiseOscillator.start(now)
-
-    // Auto-stop after duration
-    setTimeout(() => {
-      stopSpinSound()
-    }, SPIN_DURATION_MS + 100)
-  }, [initAudioContext])
-
-  const stopSpinSound = useCallback(() => {
-    if (currentSoundRef.current) {
-      const { oscillator, gainNode } = currentSoundRef.current
-      const audioContext = audioContextRef.current
-
-      if (audioContext) {
-        const now = audioContext.currentTime
-        // Quick fade out
-        gainNode.gain.cancelScheduledValues(now)
-        gainNode.gain.setValueAtTime(gainNode.gain.value, now)
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.1)
-
-        // Stop after fade
-        setTimeout(() => {
-          try {
-            oscillator.stop()
-          } catch (e) {
-            // Already stopped
-          }
-        }, 150)
+    source.onended = () => {
+      try {
+        source.disconnect()
+        filter.disconnect()
+        gain.disconnect()
+      } catch {
+        // ignore
       }
-
-      currentSoundRef.current = null
     }
-  }, [])
+  }, [initAudioContext])
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      stopSpinSound()
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close()
+      if (masterGainRef.current) {
+        try {
+          masterGainRef.current.disconnect()
+        } catch {
+          // ignore
+        }
+        masterGainRef.current = null
       }
+
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        void audioContextRef.current.close()
+      }
+      audioContextRef.current = null
+      tickNoiseBufferRef.current = null
     }
-  }, [stopSpinSound])
+  }, [])
 
   return {
-    playSpinSound,
-    stopSpinSound,
-    initAudioContext
+    initAudioContext,
+    playTick,
   }
 }

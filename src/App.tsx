@@ -86,6 +86,27 @@ const getNearestIndexForOffset = (offset: number, reelWidth: number, cardWidth: 
   return Math.round(rawIndex)
 }
 
+const getTranslateXFromComputedTransform = (el: HTMLElement) => {
+  const transform = window.getComputedStyle(el).transform
+  if (!transform || transform === 'none') return 0
+
+  // `matrix(a, b, c, d, tx, ty)`
+  if (transform.startsWith('matrix(')) {
+    const values = transform.slice(7, -1).split(',').map((v) => Number.parseFloat(v.trim()))
+    if (values.length >= 6 && Number.isFinite(values[4])) return values[4]
+    return 0
+  }
+
+  // `matrix3d(..., tx, ty, tz)`
+  if (transform.startsWith('matrix3d(')) {
+    const values = transform.slice(9, -1).split(',').map((v) => Number.parseFloat(v.trim()))
+    if (values.length >= 16 && Number.isFinite(values[12])) return values[12]
+    return 0
+  }
+
+  return 0
+}
+
 function App() {
   const [isSpinning, setIsSpinning] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
@@ -99,7 +120,10 @@ function App() {
   const [stride, setStride] = useState(CARD_WIDTH + CARD_GAP)
   const reelRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
-  const { playSpinSound, stopSpinSound } = useRouletteSound()
+  const { initAudioContext, playTick } = useRouletteSound()
+  const tickRafRef = useRef<number | null>(null)
+  const lastTickIndexRef = useRef<number | null>(null)
+  const lastTickAtMsRef = useRef(0)
 
   const trackItems = useMemo(() => {
     const items: Array<{ name: string; color: string; key: string }> = []
@@ -134,6 +158,69 @@ function App() {
     if (!reelWidth) return
     setOffset(getOffsetForIndex(currentIndex, reelWidth, cardWidth, stride))
   }, [cardWidth, currentIndex, isSpinning, reelWidth, stride])
+
+  useEffect(() => {
+    if (!isSpinning) {
+      if (tickRafRef.current !== null) {
+        window.cancelAnimationFrame(tickRafRef.current)
+        tickRafRef.current = null
+      }
+      lastTickIndexRef.current = null
+      return
+    }
+
+    const loop = () => {
+      const trackEl = trackRef.current
+      const reelEl = reelRef.current
+      if (!trackEl || !reelEl) return
+
+      const metrics = measureReelMetrics(reelEl, trackEl)
+      const latestReelWidth = metrics.reelWidth || reelWidth
+      const latestCardWidth = metrics.cardWidth || cardWidth
+      const latestStride = metrics.stride || stride
+
+      if (!latestReelWidth) {
+        tickRafRef.current = window.requestAnimationFrame(loop)
+        return
+      }
+
+      const currentTranslateX = getTranslateXFromComputedTransform(trackEl)
+      const rawIndex = getNearestIndexForOffset(
+        currentTranslateX,
+        latestReelWidth,
+        latestCardWidth,
+        latestStride,
+      )
+
+      const maxIndex = trackItems.length - 1
+      const clampedIndex = Math.max(0, Math.min(rawIndex, maxIndex))
+
+      const lastIndex = lastTickIndexRef.current
+      if (lastIndex === null) {
+        lastTickIndexRef.current = clampedIndex
+      } else if (clampedIndex !== lastIndex) {
+        const nowMs = performance.now()
+        // Prevent double-firing due to rounding jitter around boundaries.
+        if (nowMs - lastTickAtMsRef.current > 25) {
+          playTick()
+          lastTickAtMsRef.current = nowMs
+        }
+        lastTickIndexRef.current = clampedIndex
+      }
+
+      tickRafRef.current = window.requestAnimationFrame(loop)
+    }
+
+    tickRafRef.current = window.requestAnimationFrame(loop)
+
+    return () => {
+      if (tickRafRef.current !== null) {
+        window.cancelAnimationFrame(tickRafRef.current)
+        tickRafRef.current = null
+      }
+      lastTickIndexRef.current = null
+    }
+  }, [cardWidth, isSpinning, playTick, reelWidth, stride, trackItems.length])
 
   const math = useMemo((): MathStats => {
     const totalWeight = EXERCISES.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
@@ -255,12 +342,12 @@ function App() {
   const spin = () => {
     if (isSpinning || !reelWidth) return
 
+    // Initialize audio context within the user gesture so tick sounds can play during the animation.
+    initAudioContext()
+
     setIsSpinning(true)
     setSelectedExercise(null)
     setSelectedIndex(null)
-
-    // Start the roulette sound effect
-    playSpinSound()
 
     const loops = MIN_LOOPS + Math.floor(Math.random() * (MAX_LOOPS - MIN_LOOPS + 1))
     const exerciseIndex = pickExerciseIndex()
@@ -302,9 +389,6 @@ function App() {
       setCurrentIndex(snappedIndex)
       setSelectedIndex(snappedIndex)
       setIsSpinning(false)
-
-      // Stop the sound effect
-      stopSpinSound()
     }, SPIN_DURATION_MS)
   }
 
@@ -352,8 +436,6 @@ function App() {
       )}
 
       <section className="math" aria-label="Math and odds" onClick={() => setActivePopup(null)}>
-        <h2>Math</h2>
-
         <div className="math-tabs">
           <button
             className={`math-tab${mathTab === 'sessions' ? ' active' : ''}`}
