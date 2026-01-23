@@ -383,6 +383,8 @@ function App() {
           <SimulationTab 
             exercises={shuffledExercises}
             math={math}
+            activePopup={activePopup}
+            setActivePopup={setActivePopup}
           />
         )}
       </section>

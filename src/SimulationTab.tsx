@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react'
-import { type Exercise, type MathStats, RARITY_CONFIG } from './types.tsx'
+import { InfoPopup } from './InfoPopup'
+import { type Exercise, type MathStats, type ExplanationKey, RARITY_CONFIG } from './types.tsx'
 import { pickExerciseIndex } from './workoutMath'
 
 type SimulationTabProps = {
   exercises: Exercise[]
   math: MathStats
+  activePopup: ExplanationKey | null
+  setActivePopup: (key: ExplanationKey | null) => void
 }
 
 type RarityStats = {
@@ -14,7 +17,7 @@ type RarityStats = {
   count: number
 }
 
-export function SimulationTab({ exercises, math }: SimulationTabProps) {
+export function SimulationTab({ exercises, math, activePopup, setActivePopup }: SimulationTabProps) {
   const [targetSpins, setTargetSpins] = useState(1000)
   const [results, setResults] = useState<{
     rarityStats: RarityStats[]
@@ -22,6 +25,8 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
     totalSpins: number
     totalWorkouts: number
     isSimulating: boolean
+    lengthFrequencies: Record<number, number>
+    stdDev: number
   } | null>(null)
 
   const runSimulation = () => {
@@ -40,6 +45,8 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
       }
       let totalSpins = 0
       let totalWorkouts = 0
+      let sumOfLengthsSquared = 0
+      const lengthFrequencies: Record<number, number> = {}
 
       // Simulate until we reach the target number of spins
       while (totalSpins < targetSpins) {
@@ -62,6 +69,8 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
           // Safety break to prevent infinite loops if no exit condition exists
           if (workoutLength > 1000) break 
         }
+        sumOfLengthsSquared += (workoutLength * workoutLength)
+        lengthFrequencies[workoutLength] = (lengthFrequencies[workoutLength] || 0) + 1
       }
 
       const rarityStats: RarityStats[] = (Object.keys(RARITY_CONFIG) as (keyof typeof RARITY_CONFIG)[]).map(rarity => ({
@@ -71,15 +80,59 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
         count: rarityCounts[rarity]
       }))
 
+      const avgLength = totalSpins / totalWorkouts
+      const variance = (sumOfLengthsSquared / totalWorkouts) - (avgLength * avgLength)
+      const stdDev = Math.sqrt(Math.max(0, variance))
+
       setResults({
         rarityStats,
-        avgLength: totalSpins / totalWorkouts,
+        avgLength,
         totalSpins,
         totalWorkouts,
-        isSimulating: false
+        isSimulating: false,
+        lengthFrequencies,
+        stdDev
       })
     }, 0)
   }
+
+  const histogramData = useMemo(() => {
+    if (!results || !results.lengthFrequencies) return []
+    
+    const freqs = results.lengthFrequencies
+    const lengths = Object.keys(freqs).map(Number).sort((a, b) => a - b)
+    if (lengths.length === 0) return []
+
+    // Cap display at 99th percentile or 100 spins to keep chart readable
+    const displayMax = Math.min(Math.max(...lengths), 80)
+    
+    const data = []
+    for (let i = 1; i <= displayMax; i++) {
+      data.push({
+        length: i,
+        count: freqs[i] || 0
+      })
+    }
+    return data
+  }, [results])
+
+  const maxFreq = useMemo(() => 
+    histogramData.length > 0 ? Math.max(...histogramData.map(d => d.count)) : 0
+  , [histogramData])
+
+  const theoreticalPoints = useMemo(() => {
+    if (!results || histogramData.length === 0) return ""
+    
+    return histogramData.map((d, i) => {
+      const x = (i + 0.5) * (100 / histogramData.length)
+      // P(L = k) = (1-p)^(k-1) * p
+      const p = math.exitProbability
+      const theoreticalProb = Math.pow(1 - p, d.length - 1) * p
+      const theoreticalCount = theoreticalProb * results.totalWorkouts
+      const y = 100 - (theoreticalCount / maxFreq) * 100
+      return `${x},${y}`
+    }).join(" ")
+  }, [histogramData, results, math.exitProbability, maxFreq])
 
   return (
     <div className="simulation-tab">
@@ -119,7 +172,10 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
       {results && (
         <div className="sim-results">
           <div className="math-card">
-            <h3>Rarity Distribution</h3>
+            <h3>
+              Rarity Distribution
+              <InfoPopup explanationKey="rarity" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
+            </h3>
             <p className="math-subtitle">Across all {results.totalSpins.toLocaleString()} spins</p>
             <table className="sim-table">
               <thead>
@@ -152,7 +208,10 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
           </div>
 
           <div className="math-card">
-            <h3>Workout Length</h3>
+            <h3>
+              Workout Length
+              <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
+            </h3>
             <p className="math-subtitle">Across {results.totalWorkouts.toLocaleString()} full workouts</p>
             <div className="sim-kpi-group">
               <div className="sim-kpi">
@@ -164,7 +223,11 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
                 <span className="sim-kpi-value">{results.avgLength.toFixed(2)}</span>
               </div>
               <div className="sim-kpi">
-                <span className="sim-kpi-label">Delta</span>
+                <span className="sim-kpi-label">Std Deviation</span>
+                <span className="sim-kpi-value">{results.stdDev.toFixed(2)}</span>
+              </div>
+              <div className="sim-kpi">
+                <span className="sim-kpi-label">Delta (Mean)</span>
                 <span className="sim-kpi-value" style={{ 
                   color: Math.abs(results.avgLength - math.expectedSpinsUntilEnd) > 0.5 ? '#ff4d4f' : '#52c41a'
                 }}>
@@ -175,7 +238,7 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
           </div>
 
           <div className="math-card math-card--full">
-            <h3>Distribution Visualization</h3>
+            <h3>Rarity Distribution Visualization</h3>
             <div className="sim-chart">
               {results.rarityStats.map(stat => {
                 const rarity = stat.rarity as keyof typeof RARITY_CONFIG
@@ -222,6 +285,48 @@ export function SimulationTab({ exercises, math }: SimulationTabProps) {
                   <span className="legend-box legend-box--actual"></span>
                   <span>Actual</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="math-card math-card--full">
+            <h3>
+              Workout Length Frequency (Geometric Distribution)
+              <InfoPopup explanationKey="lengthCurve" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
+            </h3>
+            <p className="math-subtitle">
+              Shows how many workouts ended after exactly N spins. 
+              The most frequent result is 1 spin, with a long tail for longer workouts.
+              The <span style={{ borderBottom: '1.5px solid #fcd34d', paddingBottom: '2px', color: '#fcd34d' }}>yellow line</span> shows the theoretical mathematical model.
+            </p>
+            <div className="sim-histogram-wrapper">
+              <div className="sim-histogram">
+                {histogramData.map((d, i) => {
+                  const height = maxFreq > 0 ? (d.count / maxFreq) * 100 : 0
+                  return (
+                    <div 
+                      key={i} 
+                      className="sim-histogram-bar" 
+                      style={{ height: `${height}%` }}
+                      title={`${d.count.toLocaleString()} workouts lasted ${d.length} spins`}
+                    />
+                  )
+                })}
+                {theoreticalPoints && (
+                  <svg className="sim-histogram-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline 
+                      points={theoreticalPoints} 
+                      fill="none" 
+                      stroke="#fcd34d" 
+                      strokeWidth="0.6"
+                    />
+                  </svg>
+                )}
+              </div>
+              <div className="sim-histogram-labels">
+                <span>1 spin</span>
+                <span>{Math.floor(histogramData.length / 2)} spins</span>
+                <span>{histogramData.length}+ spins</span>
               </div>
             </div>
           </div>
