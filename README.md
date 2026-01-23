@@ -146,13 +146,13 @@ Since the workout only ends when they hit "Shawarma," users might get discourage
 
 #### 6. The RHAM Framework (Responsible Healthy Adult Manipulation)
 To further encourage engagement through the "Illusion of Control" and "Sunk Cost" fallacies:
-
 - **Bulk Spin (3x Fast-Track)**: Let users spin 3 times at once. It feels like a 3x higher chance of landing on shawarma, but it's the same probability per spin while instantly creating a larger "Exercise Debt" that the user is more likely to commit to.
 - **Exercise Marketplace (Trading Up/Down)**: Allow users to trade exercises. Trade a high-intensity "Epic" for two lower-intensity "Rares" (Trade Down) or sacrifice a "Common" to "Buy a Reroll" with a multiplier on the next result (Trade Up).
 - **The "Near Miss"**: If the spin lands adjacent to a Legendary/Godly item, trigger a special animation and sound. Near misses trigger similar dopamine responses to wins.
 - **Pity Timer (Pseudo-Randomness)**: Every time a user lands on a "Common" exercise, slightly increase the weight of the Shawarma tier for the next spin.
 - **Insurance (Pre-Commitment)**: Offer "Shawarma Insurance" (e.g., do 20 jumping jacks now) for a free re-roll if they land on a long cardio exercise later.
 - **Daily Double (Happy Hour)**: Double Shawarma odds during a specific hour (e.g., 5-6 PM) to condition a consistent workout habit.
+- **The Shawarma Fund (Financial Commitment)**: An optional mode where each spin "costs" $1 (virtual or via a linked savings app). This builds a "Shawarma Bank." When you hit the exit condition, the accumulated bank is what pays for your actual meal, turning the workout into a literal "earning" session for the reward.
 
 ### Immediate Code Recommendations
 
