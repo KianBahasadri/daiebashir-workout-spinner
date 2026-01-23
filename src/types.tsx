@@ -111,8 +111,8 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
     }),
   },
   avgExercises: {
-    title: 'Average Exercises Before End',
-    content: `The expected number of actual exercises you'll do before the workout ends. This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
+    title: 'Average Exercises Before Shawarma',
+    content: `The expected number of actual exercises you'll do before hitting shawarma. This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
     formula: (math) => ({
       general: (
         <>
@@ -137,7 +137,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
     formula: (math) => ({
       general: (
         <>
-          <Var>D̄</Var> <Op>=</Op> <Frac num={<>Σ (<Var>w</Var><Sub>i</Sub> <Op>×</Op> <Var>d</Var><Sub>i</Sub>)</>} den={<><Var>W</Var><Sub>non-exit</Sub></>} />
+          <Var>D̄</Var> <Op>=</Op> <Frac num={<>Σ<Sub>i: non-exit</Sub> (<Var>w</Var><Sub>i</Sub> <Op>×</Op> <Var>d</Var><Sub>i</Sub>)</>} den={<><Var>W</Var><Sub>non-exit</Sub></>} />
         </>
       ),
       substituted: (
@@ -153,8 +153,8 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
     }),
   },
   totalDuration: {
-    title: 'Expected Workout Duration',
-    content: `Total expected workout time is the average number of exercises multiplied by the average duration per exercise.`,
+    title: 'Average Workout Duration Before Shawarma',
+    content: `Average workout time before hitting shawarma is the average number of exercises multiplied by the average duration per exercise.`,
     formula: (math) => ({
       general: (
         <>

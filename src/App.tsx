@@ -11,7 +11,6 @@ const EXERCISES: Exercise[] = [
   { name: '1 min battle ropes', color: '#96CEB4', weight: 1, duration: 1, isExitCondition: false },
   { name: '2 mins pushups', color: '#FFEAA7', weight: 1, duration: 2, isExitCondition: false },
   { name: '1 min plank', color: '#DDA0DD', weight: 1, duration: 1, isExitCondition: false },
-  { name: 'end workout', color: '#98D8C8', weight: 1, duration: 0, isExitCondition: true },
   { name: 'shawarama', color: '#F7DC6F', weight: 0.25, duration: 0, isExitCondition: true },
 ]
 
@@ -161,7 +160,7 @@ function App() {
         ? nonExitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight) * exercise.duration, 0) / nonExitWeight
         : 0
 
-    // Expected total workout duration = expected exercises before end × expected duration per exercise
+    // Expected total workout duration = expected exercises before shawarma × expected duration per exercise
     const expectedTotalDuration = Number.isFinite(expectedExercisesBeforeEnd)
       ? expectedExercisesBeforeEnd * expectedDurationPerSpin
       : Number.POSITIVE_INFINITY

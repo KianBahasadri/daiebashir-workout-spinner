@@ -29,9 +29,6 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
               </div>
               <div className="weight-group-stats">
                 <span><span className="math-mono">{formatPercent(group.perItemProbability)}</span> per spin</span>
-                <span><span className="math-mono">{Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout.toFixed(2) : '∞'}</span> hits/workout</span>
-                <span><span className="math-mono">{(group.exercises.reduce((sum, e) => sum + e.duration, 0) / group.exercises.length * (Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout : 0)).toFixed(1)}</span> min expected</span>
-                <span><span className="math-mono">{group.expectedHitsPerWorkout > 0 ? (1 / group.expectedHitsPerWorkout).toFixed(1) : '∞'}</span> workouts until hit<InfoPopup explanationKey="workoutsUntilHit" activePopup={activePopup} setActivePopup={setActivePopup} math={math} /></span>
               </div>
               <div className="weight-group-items-compact">
                 {group.exercises.map((exercise) => (
@@ -39,7 +36,7 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
                     key={exercise.name}
                     className={`weight-pill-compact${exercise.isExitCondition ? ' end' : ''}`}
                     style={{ backgroundColor: exercise.color }}
-                    title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin, ${Number.isFinite(group.expectedHitsPerWorkout) ? group.expectedHitsPerWorkout.toFixed(2) : '∞'} hits/workout, ~${group.expectedHitsPerWorkout > 0 ? (1 / group.expectedHitsPerWorkout).toFixed(1) : '∞'} workouts until hit, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
+                    title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
                   >
                     {exercise.name}
                   </span>
