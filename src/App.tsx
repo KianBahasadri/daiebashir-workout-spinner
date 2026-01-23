@@ -33,6 +33,55 @@ const CARD_GAP = 16
 const TRACK_REPEATS = 100
 const MIN_LOOPS = 4
 const MAX_LOOPS = 7
+const WHEEL_SLOTS = 100
+
+const buildWeightedWheelSlots = (exercises: Exercise[]) => {
+  if (exercises.length === 0) return []
+
+  const byRarity: Record<string, Exercise[]> = {}
+  for (const exercise of exercises) {
+    if (!byRarity[exercise.rarity]) {
+      byRarity[exercise.rarity] = []
+    }
+    byRarity[exercise.rarity].push(exercise)
+  }
+
+  const plans = exercises.map((exercise) => {
+    const tierSize = byRarity[exercise.rarity]?.length ?? 1
+    const perItemProbability = RARITY_CONFIG[exercise.rarity].probability / tierSize
+    const rawCopies = perItemProbability * WHEEL_SLOTS
+    const copies = Math.floor(rawCopies)
+    return { exercise, copies, remainder: rawCopies - copies }
+  })
+
+  let used = plans.reduce((sum, plan) => sum + plan.copies, 0)
+  let remaining = WHEEL_SLOTS - used
+
+  if (remaining > 0) {
+    plans
+      .slice()
+      .sort((a, b) => b.remainder - a.remainder)
+      .slice(0, remaining)
+      .forEach((plan) => {
+        plan.copies += 1
+      })
+  }
+
+  const wheel: Exercise[] = []
+  let left = plans.reduce((sum, plan) => sum + plan.copies, 0)
+
+  while (left > 0) {
+    for (const plan of plans) {
+      if (plan.copies <= 0) continue
+      wheel.push(plan.exercise)
+      plan.copies -= 1
+      left -= 1
+      if (left === 0) break
+    }
+  }
+
+  return wheel.length > 0 ? wheel : exercises
+}
 
 const measureReelMetrics = (reelEl: HTMLDivElement | null, trackEl: HTMLDivElement | null) => {
   const measuredReelWidth = reelEl?.getBoundingClientRect().width ?? 0
@@ -122,26 +171,29 @@ function App() {
   }, [])
 
   // Set initial currentIndex after exercises are shuffled
+  const wheelSlots = useMemo(() => buildWeightedWheelSlots(shuffledExercises), [shuffledExercises])
+
   useEffect(() => {
-    if (shuffledExercises.length > 0) {
-      setCurrentIndex(4 * shuffledExercises.length)
+    if (wheelSlots.length > 0) {
+      setCurrentIndex(4 * wheelSlots.length)
     }
-  }, [shuffledExercises])
+  }, [wheelSlots.length])
 
   const trackItems = useMemo(() => {
     const items: Array<{ name: string; color: string; key: string; rarity: string }> = []
     for (let repeat = 0; repeat < TRACK_REPEATS; repeat += 1) {
-      for (const exercise of shuffledExercises) {
+      for (let i = 0; i < wheelSlots.length; i += 1) {
+        const exercise = wheelSlots[i]
         items.push({
           name: exercise.name,
           color: exercise.color,
           rarity: exercise.rarity,
-          key: `${repeat}-${exercise.name}`,
+          key: `${repeat}-${i}-${exercise.name}`,
         })
       }
     }
     return items
-  }, [shuffledExercises])
+  }, [wheelSlots])
 
   useEffect(() => {
     const measure = () => {
@@ -229,7 +281,7 @@ function App() {
   const math = useMemo(() => calculateMathStats(shuffledExercises), [shuffledExercises])
 
   const spin = () => {
-    if (isSpinning || !reelWidth || shuffledExercises.length === 0) return
+    if (isSpinning || !reelWidth || shuffledExercises.length === 0 || wheelSlots.length === 0) return
 
     // Initialize audio context within the user gesture so tick sounds can play during the animation.
     initAudioContext()
@@ -240,12 +292,25 @@ function App() {
 
     const loops = MIN_LOOPS + Math.floor(Math.random() * (MAX_LOOPS - MIN_LOOPS + 1))
     const exerciseIndex = pickExerciseIndex(shuffledExercises)
+    const pickedName = shuffledExercises[exerciseIndex]?.name
 
-    // Calculate distance to target to ensure we land exactly on the item
-    const currentRelativeIndex = currentIndex % shuffledExercises.length
-    const distanceToTarget = (exerciseIndex - currentRelativeIndex + shuffledExercises.length) % shuffledExercises.length
+    const candidateSlots: number[] = []
+    for (let i = 0; i < wheelSlots.length; i += 1) {
+      if (wheelSlots[i].name === pickedName) candidateSlots.push(i)
+    }
 
-    const targetIndex = currentIndex + loops * shuffledExercises.length + distanceToTarget
+    const slotIndex =
+      candidateSlots.length > 0
+        ? candidateSlots[Math.floor(Math.random() * candidateSlots.length)]
+        : Math.floor(Math.random() * wheelSlots.length)
+
+    // Calculate distance to target to ensure we land exactly on the slot
+    const baseSteps = loops * shuffledExercises.length
+    const baseIndex = currentIndex + baseSteps
+    const baseRelativeIndex = baseIndex % wheelSlots.length
+    const alignSteps = (slotIndex - baseRelativeIndex + wheelSlots.length) % wheelSlots.length
+
+    const targetIndex = baseIndex + alignSteps
     const targetOffset = getOffsetForIndex(targetIndex, reelWidth, cardWidth, stride)
 
     setOffset(targetOffset)
@@ -274,7 +339,7 @@ function App() {
       const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, latestCardWidth, latestStride)
 
       setOffset(snappedOffset)
-      setSelectedExercise(shuffledExercises[snappedIndex % shuffledExercises.length].name)
+      setSelectedExercise(wheelSlots[snappedIndex % wheelSlots.length].name)
       setCurrentIndex(snappedIndex)
       setSelectedIndex(snappedIndex)
       setIsSpinning(false)

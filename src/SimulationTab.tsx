@@ -120,20 +120,6 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
     histogramData.length > 0 ? Math.max(...histogramData.map(d => d.count)) : 0
   , [histogramData])
 
-  const theoreticalPoints = useMemo(() => {
-    if (!results || histogramData.length === 0) return ""
-    
-    return histogramData.map((d, i) => {
-      const x = (i + 0.5) * (100 / histogramData.length)
-      // P(L = k) = (1-p)^(k-1) * p
-      const p = math.exitProbability
-      const theoreticalProb = Math.pow(1 - p, d.length - 1) * p
-      const theoreticalCount = theoreticalProb * results.totalWorkouts
-      const y = 100 - (theoreticalCount / maxFreq) * 100
-      return `${x},${y}`
-    }).join(" ")
-  }, [histogramData, results, math.exitProbability, maxFreq])
-
   return (
     <div className="simulation-tab">
       <div className="math-card math-card--full">
@@ -183,6 +169,7 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
                   <th>Rarity</th>
                   <th>Expected</th>
                   <th>Actual</th>
+                  <th>Count</th>
                   <th>Delta</th>
                 </tr>
               </thead>
@@ -197,6 +184,7 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
                       </td>
                       <td>{(stat.expected * 100).toFixed(2)}%</td>
                       <td>{(stat.actual * 100).toFixed(2)}%</td>
+                      <td>{stat.count.toLocaleString()}</td>
                       <td style={{ color: deltaColor }}>
                         {delta > 0 ? '+' : ''}{(delta * 100).toFixed(3)}%
                       </td>
@@ -269,7 +257,15 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
                             backgroundColor: color
                           }}
                         >
-                          <span className="sim-bar-value">{(stat.actual * 100).toFixed(1)}%</span>
+                          <span 
+                            className="sim-bar-value"
+                            style={{ 
+                              color: stat.rarity === 'common' ? '#0f172a' : 'white',
+                              textShadow: stat.rarity === 'common' ? 'none' : undefined
+                            }}
+                          >
+                            {(stat.actual * 100).toFixed(1)}% ({stat.count.toLocaleString()})
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -297,38 +293,139 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
             <p className="math-subtitle">
               Shows how many workouts ended after exactly N spins. 
               The most frequent result is 1 spin, with a long tail for longer workouts.
-              The <span style={{ borderBottom: '1.5px solid #fcd34d', paddingBottom: '2px', color: '#fcd34d' }}>yellow line</span> shows the theoretical mathematical model.
+              The <span style={{ borderBottom: '1.5px solid #fcd34d', paddingBottom: '2px', color: '#fcd34d' }}>yellow dashed line</span> shows the theoretical mathematical model.
             </p>
-            <div className="sim-histogram-wrapper">
-              <div className="sim-histogram">
-                {histogramData.map((d, i) => {
-                  const height = maxFreq > 0 ? (d.count / maxFreq) * 100 : 0
-                  return (
-                    <div 
-                      key={i} 
-                      className="sim-histogram-bar" 
-                      style={{ height: `${height}%` }}
-                      title={`${d.count.toLocaleString()} workouts lasted ${d.length} spins`}
-                    />
-                  )
-                })}
-                {theoreticalPoints && (
-                  <svg className="sim-histogram-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <polyline 
-                      points={theoreticalPoints} 
-                      fill="none" 
-                      stroke="#fcd34d" 
-                      strokeWidth="0.6"
-                    />
+            {(() => {
+              const chartW = 800
+              const chartH = 260
+              const pad = 45
+              const innerW = chartW - pad * 2
+              const innerH = chartH - pad * 2
+              
+              const displayMax = histogramData.length
+              const safeMax = maxFreq > 0 ? maxFreq * 1.1 : 1
+
+              // Calculate bar width - ensure it's at least 1px
+              const barWidth = displayMax > 0 ? Math.max(1, (innerW / displayMax) * 0.8) : 0
+              const barGap = displayMax > 0 ? (innerW / displayMax) * 0.2 : 0
+
+              // Generate x-axis labels (every few spins)
+              const xAxisLabels = []
+              const xStep = Math.max(5, Math.floor(displayMax / 10))
+              for (let i = 1; i <= displayMax; i += xStep) {
+                const t = (i - 0.5) / displayMax
+                xAxisLabels.push({ value: i, x: pad + t * innerW })
+              }
+              // Always include the last value if not already present and space permits
+              if (displayMax > 0 && xAxisLabels[xAxisLabels.length - 1]?.value !== displayMax) {
+                const t = (displayMax - 0.5) / displayMax
+                xAxisLabels.push({ value: displayMax, x: pad + t * innerW })
+              }
+
+              // Generate y-axis labels
+              const yAxisTicks = 5
+              const yAxisLabels = []
+              for (let i = 0; i <= yAxisTicks; i++) {
+                const val = (safeMax * i) / yAxisTicks
+                const y = pad + innerH - (val / safeMax) * innerH
+                yAxisLabels.push({ value: val, y })
+              }
+
+              const polylinePoints = histogramData.map((d, i) => {
+                const t = (i + 0.5) / displayMax
+                const x = pad + t * innerW
+                const p = math.exitProbability
+                const theoreticalProb = Math.pow(1 - p, d.length - 1) * p
+                const theoreticalCount = theoreticalProb * results.totalWorkouts
+                const y = pad + innerH - (theoreticalCount / safeMax) * innerH
+                return `${x.toFixed(2)},${y.toFixed(2)}`
+              }).join(" ")
+
+              return (
+                <div className="sim-histogram-wrapper" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+                  <svg
+                    className="math-chart"
+                    viewBox={`0 0 ${chartW} ${chartH}`}
+                    style={{ height: 'auto', maxHeight: '300px' }}
+                    preserveAspectRatio="xMidYMid meet"
+                  >
+                    <rect x="0" y="0" width={chartW} height={chartH} rx="10" ry="10" fill="rgba(15, 23, 42, 0.45)" stroke="rgba(148, 163, 184, 0.22)" />
+                    
+                    {/* Grid lines */}
+                    <g opacity="0.1">
+                      {xAxisLabels.map((label) => (
+                        <line key={`grid-x-${label.value}`} x1={label.x} y1={pad} x2={label.x} y2={chartH - pad} stroke="#94a3b8" strokeWidth="1" />
+                      ))}
+                      {yAxisLabels.map((label, idx) => (
+                        <line key={`grid-y-${idx}`} x1={pad} y1={label.y} x2={chartW - pad} y2={label.y} stroke="#94a3b8" strokeWidth="1" />
+                      ))}
+                    </g>
+
+                    {/* Axes */}
+                    <g stroke="rgba(148, 163, 184, 0.5)" strokeWidth="2">
+                      <line x1={pad} y1={chartH - pad} x2={chartW - pad} y2={chartH - pad} />
+                      <line x1={pad} y1={pad} x2={pad} y2={chartH - pad} />
+                    </g>
+
+                    {/* Bars */}
+                    <g shapeRendering="crispEdges">
+                      {histogramData.map((d, i) => {
+                        const t = i / displayMax
+                        const x = pad + t * innerW + barGap / 2
+                        const h = (d.count / safeMax) * innerH
+                        const y = pad + innerH - h
+                        return (
+                          <rect
+                            key={i}
+                            x={x}
+                            y={y}
+                            width={Math.max(1, barWidth)}
+                            height={Math.max(0, h)}
+                            // NOTE: The global `.math-chart rect { ... }` rule would otherwise override these.
+                            style={{ fill: '#6366f1', stroke: 'none', opacity: 1 }}
+                            rx={barWidth > 4 ? 2 : 0}
+                          >
+                            <title>{`${d.count.toLocaleString()} workouts lasted ${d.length} spins`}</title>
+                          </rect>
+                        )
+                      })}
+                    </g>
+
+                    {/* Y-axis labels */}
+                    <g fill="rgba(226, 232, 240, 0.9)" fontSize="11" textAnchor="end">
+                      {yAxisLabels.map((label, idx) => (
+                        <text key={idx} x={pad - 12} y={label.y + 4}>
+                          {Math.round(label.value).toLocaleString()}
+                        </text>
+                      ))}
+                    </g>
+
+                    {/* X-axis labels */}
+                    <g fill="rgba(226, 232, 240, 0.9)" fontSize="11" textAnchor="middle">
+                      {xAxisLabels.map((label) => (
+                        <text key={label.value} x={label.x} y={chartH - pad + 20}>
+                          {label.value}
+                        </text>
+                      ))}
+                      <text x={chartW / 2} y={chartH - 12} fontSize="12" fontWeight="600" fill="rgba(226, 232, 240, 0.6)">
+                        Workout Length (number of spins)
+                      </text>
+                    </g>
+
+                    {/* Theoretical curve */}
+                    {displayMax > 0 && (
+                      <polyline
+                        points={polylinePoints}
+                        fill="none"
+                        strokeWidth="2.5"
+                        strokeDasharray="6 3"
+                        style={{ stroke: '#fcd34d', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }}
+                      />
+                    )}
                   </svg>
-                )}
-              </div>
-              <div className="sim-histogram-labels">
-                <span>1 spin</span>
-                <span>{Math.floor(histogramData.length / 2)} spins</span>
-                <span>{histogramData.length}+ spins</span>
-              </div>
-            </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}
