@@ -38,7 +38,7 @@ export function SessionsTab({ math, activePopup, setActivePopup }: SessionsTabPr
         <dl className="math-kpis">
           <div className="math-kpi">
             <dt>
-              Average exercises before shawarma
+              Average exercises before <span className="shawarma-text">shawarma</span>
               <InfoPopup explanationKey="avgExercises" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>
@@ -56,7 +56,7 @@ export function SessionsTab({ math, activePopup, setActivePopup }: SessionsTabPr
           </div>
           <div className="math-kpi">
             <dt>
-              Average workout duration before shawarma
+              Average workout duration before <span className="shawarma-text">shawarma</span>
               <InfoPopup explanationKey="totalDuration" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
             </dt>
             <dd>

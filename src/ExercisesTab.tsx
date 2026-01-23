@@ -1,5 +1,5 @@
 import { InfoPopup } from './InfoPopup'
-import { type MathStats, type ExplanationKey, formatPercent } from './types.tsx'
+import { type MathStats, type ExplanationKey, formatPercent, RARITY_CONFIG } from './types.tsx'
 
 type ExercisesTabProps = {
   math: MathStats
@@ -12,38 +12,51 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
     <div className="math-grid">
       <div className="math-card math-card--full">
         <h3>
-          Odds by weight (grouped)
-          <InfoPopup explanationKey="weights" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
+          Odds by rarity (grouped)
+          <InfoPopup explanationKey="rarity" activePopup={activePopup} setActivePopup={setActivePopup} math={math} />
         </h3>
         <p className="math-subtitle">
-          Expected hits per workout for each exercise, grouped by weight tier.
+          Expected hits per workout for each exercise, grouped by rarity tier.
         </p>
 
         <div className="weight-groups">
-          {math.groupedByWeight.map((group) => (
-            <div key={group.weight} className="weight-group">
-              <div className="weight-group-header">
-                <div className="weight-group-title">
-                  Weight <span className="math-mono">{group.weight}</span>
+          {math.groupedByRarity.map((group) => {
+            const rarityConfig = RARITY_CONFIG[group.rarity]
+            return (
+              <div key={group.rarity} className="weight-group">
+                <div className="weight-group-header">
+                  <div className="weight-group-title">
+                    <span
+                      className="rarity-badge"
+                      style={{
+                        backgroundColor: rarityConfig.color,
+                        color: group.rarity === 'common' ? '#000' : '#fff'
+                      }}
+                    >
+                      {rarityConfig.name}
+                    </span>
+                    <span className="category-tag">{rarityConfig.category}</span>
+                    <span className="math-mono">{formatPercent(group.groupProbability)}</span> total
+                  </div>
+                </div>
+                <div className="weight-group-stats">
+                  <span><span className="math-mono">{formatPercent(group.perItemProbability)}</span> per exercise</span>
+                </div>
+                <div className="weight-group-items-compact">
+                  {group.exercises.map((exercise) => (
+                    <span
+                      key={exercise.name}
+                      className={`weight-pill-compact${exercise.isExitCondition ? ' end' : ''} ${exercise.rarity === 'legendary' ? 'legendary-tier' : ''} ${exercise.rarity === 'godly' ? 'godly-tier' : ''}`}
+                      style={{ backgroundColor: (exercise.rarity === 'legendary' || exercise.rarity === 'godly') ? undefined : exercise.color }}
+                      title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
+                    >
+                      {exercise.name}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <div className="weight-group-stats">
-                <span><span className="math-mono">{formatPercent(group.perItemProbability)}</span> per spin</span>
-              </div>
-              <div className="weight-group-items-compact">
-                {group.exercises.map((exercise) => (
-                  <span
-                    key={exercise.name}
-                    className={`weight-pill-compact${exercise.isExitCondition ? ' end' : ''}`}
-                    style={{ backgroundColor: exercise.color }}
-                    title={`${exercise.name}: ${formatPercent(group.perItemProbability)} per spin, ${exercise.duration} min${exercise.isExitCondition ? ' (exit)' : ''}`}
-                  >
-                    {exercise.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

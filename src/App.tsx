@@ -4,16 +4,25 @@ import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
 import { RulesTab } from './RulesTab'
 import { useRouletteSound } from './useRouletteSound'
-import { type Exercise, type ExplanationKey, type MathStats } from './types.tsx'
+import { type Exercise, type ExplanationKey, type MathStats, RARITY_CONFIG } from './types.tsx'
 
 const EXERCISES: Exercise[] = [
-  { name: '10 mins run', color: '#FF6B6B', weight: 1, duration: 10, isExitCondition: false },
-  { name: '10 mins row', color: '#4ECDC4', weight: 1, duration: 10, isExitCondition: false },
-  { name: '10 mins cycle', color: '#45B7D1', weight: 1, duration: 10, isExitCondition: false },
-  { name: '1 min battle ropes', color: '#96CEB4', weight: 1, duration: 1, isExitCondition: false },
-  { name: '2 mins pushups', color: '#FFEAA7', weight: 1, duration: 2, isExitCondition: false },
-  { name: '1 min plank', color: '#DDA0DD', weight: 1, duration: 1, isExitCondition: false },
-  { name: 'shawarama', color: '#F7DC6F', weight: 0.25, duration: 0, isExitCondition: true },
+  // Common - Cardio exercises (white)
+  { name: '10 mins run', color: RARITY_CONFIG.common.color, rarity: 'common', duration: 10, isExitCondition: false },
+  { name: '10 mins row (cardio)', color: RARITY_CONFIG.common.color, rarity: 'common', duration: 10, isExitCondition: false },
+  { name: '10 mins cycle', color: RARITY_CONFIG.common.color, rarity: 'common', duration: 10, isExitCondition: false },
+  // Rare - Other exercises (blue)
+  { name: '1 min battle ropes', color: RARITY_CONFIG.rare.color, rarity: 'rare', duration: 1, isExitCondition: false },
+  { name: '1 min pushups', color: RARITY_CONFIG.rare.color, rarity: 'rare', duration: 1, isExitCondition: false },
+  { name: '1 min plank', color: RARITY_CONFIG.rare.color, rarity: 'rare', duration: 1, isExitCondition: false },
+  // Epic - Strength exercises (purple)
+  { name: '10 mins squats', color: RARITY_CONFIG.epic.color, rarity: 'epic', duration: 10, isExitCondition: false },
+  { name: '10 mins bench press', color: RARITY_CONFIG.epic.color, rarity: 'epic', duration: 10, isExitCondition: false },
+  { name: '10 mins rows (strength)', color: RARITY_CONFIG.epic.color, rarity: 'epic', duration: 10, isExitCondition: false },
+  // Legendary - Shawarma (red)
+  { name: 'shawarma', color: RARITY_CONFIG.legendary.color, rarity: 'legendary', duration: 0, isExitCondition: true },
+  // Godly - Shawarma + Beer (gold)
+  { name: 'Shawarma + Beer', color: RARITY_CONFIG.godly.color, rarity: 'godly', duration: 0, isExitCondition: true },
 ]
 
 const LENGTH_CURVE_TARGET_CDF = 0.95
@@ -26,23 +35,40 @@ const spinsForCdf = (p: number, targetCdf: number) => {
   return Math.max(1, Math.ceil(Math.log(1 - clampedTarget) / Math.log(1 - p)))
 }
 
-const clampWeight = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0)
+const pickExerciseIndex = (exercises: Exercise[]) => {
+  // Group exercises by rarity
+  const exercisesByRarity = exercises.reduce((acc, exercise) => {
+    if (!acc[exercise.rarity]) {
+      acc[exercise.rarity] = []
+    }
+    acc[exercise.rarity].push(exercise)
+    return acc
+  }, {} as Record<string, Exercise[]>)
 
-const pickExerciseIndex = () => {
-  const total = EXERCISES.reduce((sum, exercise) => sum + Math.max(0, exercise.weight), 0)
+  // Calculate cumulative probabilities for each rarity tier
+  const roll = Math.random()
+  let cumulativeProbability = 0
 
-  // Fallback to uniform if weights are all 0/invalid.
-  if (total <= 0) return Math.floor(Math.random() * EXERCISES.length)
+  // Check each rarity tier in order: common, rare, epic, legendary, godly
+  const rarityOrder: (keyof typeof RARITY_CONFIG)[] = ['common', 'rare', 'epic', 'legendary', 'godly']
 
-  const roll = Math.random() * total
-  let cumulative = 0
+  for (const rarity of rarityOrder) {
+    if (exercisesByRarity[rarity]) {
+      const rarityProbability = RARITY_CONFIG[rarity].probability
+      cumulativeProbability += rarityProbability
 
-  for (let i = 0; i < EXERCISES.length; i += 1) {
-    cumulative += Math.max(0, EXERCISES[i].weight)
-    if (roll < cumulative) return i
+      if (roll < cumulativeProbability) {
+        // Select a random exercise from this rarity tier
+        const exercisesInTier = exercisesByRarity[rarity]
+        const randomIndexInTier = Math.floor(Math.random() * exercisesInTier.length)
+        const selectedExercise = exercisesInTier[randomIndexInTier]
+        return exercises.findIndex(ex => ex === selectedExercise)
+      }
+    }
   }
 
-  return EXERCISES.length - 1
+  // Fallback (should not happen with proper probabilities)
+  return Math.floor(Math.random() * exercises.length)
 }
 
 const SPIN_DURATION_MS = 4000
@@ -108,12 +134,13 @@ const getTranslateXFromComputedTransform = (el: HTMLElement) => {
 }
 
 function App() {
+  const [shuffledExercises, setShuffledExercises] = useState<Exercise[]>([])
   const [isSpinning, setIsSpinning] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
   const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules'>('sessions')
-  const [currentIndex, setCurrentIndex] = useState(4 * EXERCISES.length)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(CARD_WIDTH)
@@ -125,10 +152,30 @@ function App() {
   const lastTickIndexRef = useRef<number | null>(null)
   const lastTickAtMsRef = useRef(0)
 
+  // Shuffle exercises on component mount
+  useEffect(() => {
+    const shuffleArray = <T,>(array: T[]): T[] => {
+      const shuffled = [...array]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      return shuffled
+    }
+    setShuffledExercises(shuffleArray(EXERCISES))
+  }, [])
+
+  // Set initial currentIndex after exercises are shuffled
+  useEffect(() => {
+    if (shuffledExercises.length > 0) {
+      setCurrentIndex(4 * shuffledExercises.length)
+    }
+  }, [shuffledExercises])
+
   const trackItems = useMemo(() => {
     const items: Array<{ name: string; color: string; key: string }> = []
     for (let repeat = 0; repeat < TRACK_REPEATS; repeat += 1) {
-      for (const exercise of EXERCISES) {
+      for (const exercise of shuffledExercises) {
         items.push({
           name: exercise.name,
           color: exercise.color,
@@ -137,7 +184,7 @@ function App() {
       }
     }
     return items
-  }, [])
+  }, [shuffledExercises])
 
   useEffect(() => {
     const measure = () => {
@@ -223,40 +270,53 @@ function App() {
   }, [cardWidth, isSpinning, playTick, reelWidth, stride, trackItems.length])
 
   const math = useMemo((): MathStats => {
-    const totalWeight = EXERCISES.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
-    const usesUniformFallback = totalWeight <= 0
+    // Calculate probabilities based on rarity
+    const exitExercises = shuffledExercises.filter((exercise) => exercise.isExitCondition)
+    const exitProbability = exitExercises.length > 0 ? RARITY_CONFIG.legendary.probability : 0
 
-    // Calculate exit probability using isExitCondition
-    const exitExercises = EXERCISES.filter((exercise) => exercise.isExitCondition)
-    const exitWeight = exitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
-
-    const exitProbability = usesUniformFallback
-      ? exitExercises.length > 0
-        ? exitExercises.length / EXERCISES.length
-        : 0
-      : exitWeight / totalWeight
+    // Calculate total weight (for backward compatibility with existing math)
+    const totalWeight = shuffledExercises.length // Simplified - each exercise has equal "weight" now
 
     // Calculate shawarma-specific stats
-    const shawarmaExercise = EXERCISES.find((exercise) => exercise.name.toLowerCase().includes('shawarama') || exercise.name.toLowerCase().includes('shawarma'))
-    const shawarmaWeight = clampWeight(shawarmaExercise?.weight ?? 0)
-    const shawarmaGivenExit = exitWeight > 0 ? shawarmaWeight / exitWeight : 0
+    const shawarmaExercise = shuffledExercises.find((exercise) => exercise.name.toLowerCase().includes('shawarma'))
+    const shawarmaWeight = shawarmaExercise ? RARITY_CONFIG.legendary.probability : 0
+    const exitWeight = exitExercises.length > 0 ? RARITY_CONFIG.legendary.probability : 0
+    const shawarmaGivenExit = exitWeight > 0 ? 1.0 : 0 // Shawarma is the only exit condition, so 100% chance given exit
     const expectedWorkoutsUntilShawarma = shawarmaGivenExit > 0 ? 1 / shawarmaGivenExit : Number.POSITIVE_INFINITY
+
+    const usesUniformFallback = false // We now have defined probabilities
 
     const expectedSpinsUntilEnd = exitProbability > 0 ? 1 / exitProbability : Number.POSITIVE_INFINITY
     const expectedExercisesBeforeEnd =
       exitProbability > 0 ? (1 - exitProbability) / exitProbability : Number.POSITIVE_INFINITY
 
     // Calculate expected duration per non-exit spin
-    const nonExitExercises = EXERCISES.filter((exercise) => !exercise.isExitCondition)
-    const nonExitWeight = nonExitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight), 0)
-    
-    const expectedDurationPerSpin = usesUniformFallback
-      ? nonExitExercises.length > 0
-        ? nonExitExercises.reduce((sum, exercise) => sum + exercise.duration, 0) / nonExitExercises.length
-        : 0
-      : nonExitWeight > 0
-        ? nonExitExercises.reduce((sum, exercise) => sum + clampWeight(exercise.weight) * exercise.duration, 0) / nonExitWeight
-        : 0
+    const nonExitExercises = shuffledExercises.filter((exercise) => !exercise.isExitCondition)
+
+    // Calculate weighted duration based on rarity probabilities
+    let totalDurationWeight = 0
+    let weightedDurationSum = 0
+
+    const exercisesByRarity = nonExitExercises.reduce((acc, exercise) => {
+      if (!acc[exercise.rarity]) {
+        acc[exercise.rarity] = []
+      }
+      acc[exercise.rarity].push(exercise)
+      return acc
+    }, {} as Record<string, Exercise[]>)
+
+    for (const rarity of Object.keys(RARITY_CONFIG) as (keyof typeof RARITY_CONFIG)[]) {
+      const exercisesInTier = exercisesByRarity[rarity] || []
+      if (exercisesInTier.length > 0) {
+        const tierProbability = RARITY_CONFIG[rarity].probability
+        const avgDurationInTier = exercisesInTier.reduce((sum, ex) => sum + ex.duration, 0) / exercisesInTier.length
+        weightedDurationSum += tierProbability * avgDurationInTier
+        totalDurationWeight += tierProbability
+      }
+    }
+
+    const expectedDurationPerSpin = totalDurationWeight > 0 ? weightedDurationSum / totalDurationWeight : 0
+    const nonExitWeight = nonExitExercises.length // For backward compatibility
 
     // Expected total workout duration = expected exercises before shawarma × expected duration per exercise
     const expectedTotalDuration = Number.isFinite(expectedExercisesBeforeEnd)
@@ -269,43 +329,47 @@ function App() {
       return 1 - Math.pow(1 - exitProbability, spins)
     }
 
-    const groupsMap = new Map<number, Exercise[]>()
-    for (const exercise of EXERCISES) {
-      const w = clampWeight(exercise.weight)
-      const group = groupsMap.get(w)
+    // Group by rarity instead of weight
+    const rarityGroupsMap = new Map<string, Exercise[]>()
+    for (const exercise of shuffledExercises) {
+      const group = rarityGroupsMap.get(exercise.rarity)
       if (group) group.push(exercise)
-      else groupsMap.set(w, [exercise])
+      else rarityGroupsMap.set(exercise.rarity, [exercise])
     }
 
-    const groupedByWeight = Array.from(groupsMap.entries())
-      .map(([weight, exercises]) => {
-        const perItemProbability = usesUniformFallback ? 1 / EXERCISES.length : weight / totalWeight
-        const groupProbability = usesUniformFallback
-          ? exercises.length / EXERCISES.length
-          : perItemProbability * exercises.length
-        
+    const groupedByRarity = Array.from(rarityGroupsMap.entries())
+      .map(([rarityKey, exercises]) => {
+        const rarity = rarityKey as keyof typeof RARITY_CONFIG
+        const rarityProbability = RARITY_CONFIG[rarity].probability
+        const perItemProbability = exercises.length > 0 ? rarityProbability / exercises.length : 0
+        const groupProbability = rarityProbability
+
         // Check if this group contains exit conditions
         const hasExitConditions = exercises.some(e => e.isExitCondition)
-        
+
         // Expected hits per workout:
-        // - For exit conditions: P(ending with this exit) = weight / exitWeight
+        // - For exit conditions: P(ending with this exit) = rarityProbability (shawarma is only exit)
         // - For regular exercises: expectedExercisesBeforeEnd × perItemProbability
         const expectedHitsPerWorkout = hasExitConditions
-          ? exitWeight > 0 ? weight / exitWeight : 0
+          ? rarityProbability
           : Number.isFinite(expectedExercisesBeforeEnd)
             ? expectedExercisesBeforeEnd * perItemProbability
             : Number.POSITIVE_INFINITY
-        
-        return { 
-          weight, 
-          exercises, 
-          perItemProbability, 
+
+        return {
+          rarity,
+          exercises,
+          perItemProbability,
           groupProbability,
           expectedHitsPerWorkout,
           hasExitConditions
         }
       })
-      .sort((a, b) => b.weight - a.weight || b.exercises.length - a.exercises.length)
+      .sort((a, b) => {
+        // Sort by rarity order: common, rare, epic, legendary, godly
+        const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3, godly: 4 }
+        return rarityOrder[a.rarity] - rarityOrder[b.rarity]
+      })
 
     const k95 = spinsForCdf(exitProbability, LENGTH_CURVE_TARGET_CDF)
     const lengthCurvePoints = Number.isFinite(k95) ? k95 : 20
@@ -334,13 +398,13 @@ function App() {
       shawarmaGivenExit,
       expectedWorkoutsUntilShawarma,
       chanceEndWithin: cdf,
-      groupedByWeight,
+      groupedByRarity,
       lengthCurve,
     }
-  }, [])
+  }, [shuffledExercises])
 
   const spin = () => {
-    if (isSpinning || !reelWidth) return
+    if (isSpinning || !reelWidth || shuffledExercises.length === 0) return
 
     // Initialize audio context within the user gesture so tick sounds can play during the animation.
     initAudioContext()
@@ -350,13 +414,13 @@ function App() {
     setSelectedIndex(null)
 
     const loops = MIN_LOOPS + Math.floor(Math.random() * (MAX_LOOPS - MIN_LOOPS + 1))
-    const exerciseIndex = pickExerciseIndex()
-    
+    const exerciseIndex = pickExerciseIndex(shuffledExercises)
+
     // Calculate distance to target to ensure we land exactly on the item
-    const currentRelativeIndex = currentIndex % EXERCISES.length
-    const distanceToTarget = (exerciseIndex - currentRelativeIndex + EXERCISES.length) % EXERCISES.length
-    
-    const targetIndex = currentIndex + loops * EXERCISES.length + distanceToTarget
+    const currentRelativeIndex = currentIndex % shuffledExercises.length
+    const distanceToTarget = (exerciseIndex - currentRelativeIndex + shuffledExercises.length) % shuffledExercises.length
+
+    const targetIndex = currentIndex + loops * shuffledExercises.length + distanceToTarget
     const targetOffset = getOffsetForIndex(targetIndex, reelWidth, cardWidth, stride)
 
     setOffset(targetOffset)
@@ -385,7 +449,7 @@ function App() {
       const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, latestCardWidth, latestStride)
 
       setOffset(snappedOffset)
-      setSelectedExercise(EXERCISES[snappedIndex % EXERCISES.length].name)
+      setSelectedExercise(shuffledExercises[snappedIndex % shuffledExercises.length].name)
       setCurrentIndex(snappedIndex)
       setSelectedIndex(snappedIndex)
       setIsSpinning(false)
@@ -414,8 +478,8 @@ function App() {
             {trackItems.map((exercise, index) => (
               <div
                 key={exercise.key}
-                className={`reel-item${index === selectedIndex ? ' selected' : ''}`}
-                style={{ backgroundColor: exercise.color }}
+                className={`reel-item${index === selectedIndex ? ' selected' : ''} ${exercise.rarity === 'legendary' ? 'legendary-tier' : ''} ${exercise.rarity === 'godly' ? 'godly-tier' : ''}`}
+                style={{ backgroundColor: (exercise.rarity === 'legendary' || exercise.rarity === 'godly') ? undefined : exercise.color }}
               >
                 {exercise.name}
               </div>

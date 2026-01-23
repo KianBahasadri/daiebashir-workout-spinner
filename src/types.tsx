@@ -1,21 +1,28 @@
 import type { ReactNode } from 'react'
 
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'godly'
+
+export const RARITY_CONFIG = {
+  common: { name: 'Common', color: '#FFFFFF', probability: 0.5, category: 'Cardio' },
+  rare: { name: 'Rare', color: '#4A90E2', probability: 0.35, category: 'Bodyweight' },
+  epic: { name: 'Epic', color: '#9B59B6', probability: 0.1, category: 'Strength' },
+  legendary: { name: 'Legendary', color: '#FF3B30', probability: 0.04, category: 'Reward' },
+  godly: { name: 'Godly', color: '#FFD700', probability: 0.01, category: 'Ultimate' }
+} as const
+
 export type Exercise = {
   name: string
   color: string
-  /**
-   * Relative weight (>= 0). Higher = more likely.
-   * These are treated as weights and normalized at runtime.
-   */
-  weight: number
+  /** Rarity tier that determines probability */
+  rarity: Rarity
   /** Duration of the exercise in minutes */
   duration: number
   /** Whether landing on this exercise ends the workout */
   isExitCondition: boolean
 }
 
-export type WeightGroup = {
-  weight: number
+export type RarityGroup = {
+  rarity: Rarity
   exercises: Exercise[]
   perItemProbability: number
   groupProbability: number
@@ -44,7 +51,7 @@ export type MathStats = {
   shawarmaGivenExit: number
   expectedWorkoutsUntilShawarma: number
   chanceEndWithin: (spins: number) => number
-  groupedByWeight: WeightGroup[]
+  groupedByRarity: RarityGroup[]
   lengthCurve: LengthCurvePoint[]
 }
 
@@ -91,7 +98,7 @@ export type Explanation = {
 export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   exitProbability: {
     title: 'Exit Probability',
-    content: `This is the chance of landing on any exit condition each spin. Calculated as the sum of exit exercise weights divided by the total weight of all exercises.`,
+    content: `This is the chance of landing on any exit condition each spin. Based on the Legendary (gold) rarity tier probability.`,
     formula: (math) => ({
       general: (
         <>
@@ -112,7 +119,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   avgExercises: {
     title: 'Average Exercises Before Shawarma',
-    content: `The expected number of actual exercises you'll do before hitting shawarma. This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
+    content: `The expected number of actual exercises you'll do before hitting <span class="shawarma-text">shawarma</span>. This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
     formula: (math) => ({
       general: (
         <>
@@ -154,7 +161,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   totalDuration: {
     title: 'Average Workout Duration Before Shawarma',
-    content: `Average workout time before hitting shawarma is the average number of exercises multiplied by the average duration per exercise.`,
+    content: `Average workout time before hitting <span class="shawarma-text">shawarma</span> is the average number of exercises multiplied by the average duration per exercise.`,
     formula: (math) => ({
       general: (
         <>
@@ -175,7 +182,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   shawarma: {
     title: 'Workouts Until Shawarma',
-    content: `Given that each workout ends with some exit condition, this is the expected number of complete workouts until one specifically ends with shawarma.`,
+    content: `Given that each workout ends with some exit condition, this is the expected number of complete workouts until one specifically ends with <span class="shawarma-text">shawarma</span>.`,
     formula: (math) => ({
       general: (
         <>
@@ -236,20 +243,20 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
       ),
     }),
   },
-  weights: {
-    title: 'Weight System',
-    content: `Each exercise has a weight that determines how likely it is to be selected. For regular exercises, expected hits = avg exercises × probability per spin.`,
+  rarity: {
+    title: 'Rarity System',
+    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (35%), Epic (10%), Legendary (4%), Godly (1%). Expected hits = avg exercises × probability per exercise.`,
     formula: (math) => {
-      const sampleGroup = math.groupedByWeight.find(g => !g.hasExitConditions) || math.groupedByWeight[0]
+      const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
       return {
         general: (
           <>
-            <Var>hits</Var> <Op>=</Op> <Var>E</Var>[exercises] <Op>×</Op> <Frac num={<Var>w</Var>} den={<><Var>W</Var><Sub>total</Sub></>} />
+            <Var>hits</Var> <Op>=</Op> <Var>E</Var>[exercises] <Op>×</Op> <Var>p</Var><Sub>rarity</Sub>
           </>
         ),
         substituted: (
           <>
-            <Var>hits</Var> <Op>=</Op> <Num>{Number.isFinite(math.expectedExercisesBeforeEnd) ? math.expectedExercisesBeforeEnd.toFixed(2) : '∞'}</Num> <Op>×</Op> <Frac num={<Num>{sampleGroup?.weight ?? 1}</Num>} den={<Num>{math.totalWeight.toFixed(2)}</Num>} />
+            <Var>hits</Var> <Op>=</Op> <Num>{Number.isFinite(math.expectedExercisesBeforeEnd) ? math.expectedExercisesBeforeEnd.toFixed(2) : '∞'}</Num> <Op>×</Op> <Num>{sampleGroup ? formatPercent(sampleGroup.perItemProbability) : 'N/A'}</Num>
           </>
         ),
         result: (
@@ -264,7 +271,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
     title: 'Workouts Until Hit',
     content: `The expected number of complete workout sessions before landing on this exercise at least once.`,
     formula: (math) => {
-      const sampleGroup = math.groupedByWeight.find(g => !g.hasExitConditions) || math.groupedByWeight[0]
+      const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
       const hitsPerWorkout = sampleGroup?.expectedHitsPerWorkout ?? 0
       return {
         general: (
