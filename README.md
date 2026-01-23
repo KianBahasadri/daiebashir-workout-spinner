@@ -18,6 +18,29 @@ pnpm run deploy # deploy to Cloudflare Pages
 ## Live Site
 https://daiebashir-workout-spinner.pages.dev
 
+## Ethics & Philosophy
+
+**This is NOT a gambling site.** Workout Spinner is a fitness application that deliberately applies gambling psychology principles to encourage exercise and physical activity.
+
+### The Ethical Framework
+
+Traditional gambling exploits psychological mechanisms (variable ratio reinforcement, rarity systems, anticipation mechanics) to encourage monetary spending, which raises serious ethical concerns. Workout Spinner intentionally misuses these same psychological principles—but with a crucial difference: **instead of extracting money, it encourages healthy behavior**.
+
+**Key Ethical Distinctions:**
+
+- **100% Free**: There is no monetary component whatsoever. No purchases, no microtransactions, no paid advantages. You cannot spend money even if you wanted to.
+- **Positive Outcome**: The "addictive" behavior being encouraged is exercise—objectively beneficial for physical and mental health.
+- **Transparent Design**: The probability mathematics are openly displayed and explained in the app. Users can see exactly how the randomization works.
+- **No Exploitation**: Since there's no financial component, being psychologically manipulative to increase engagement means users exercise more, not lose money.
+
+### The Goal
+
+The explicit goal of this application is to be **maximally engaging and psychologically compelling** to motivate people to work out. We leverage the same dopamine-triggering mechanics that make slot machines and loot boxes engaging—rarity tiers, anticipation, variable rewards—but redirect that engagement toward fitness instead of gambling.
+
+In this context, making the app "addictive" is not only ethical but desirable. If someone becomes "addicted" to spinning for workouts, the result is improved health and fitness, not financial harm.
+
+**Bottom Line**: This app gamifies exercise by borrowing psychological techniques from gambling, but it's free, transparent, and designed to improve your health—not empty your wallet.
+
 ## Project Analysis & Roadmap
 
 ### Functionality Overview
