@@ -192,7 +192,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
       ),
       substituted: (
         <>
-          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>1</Num>} den={<Frac num={<Num>{math.shawarmaWeight.toFixed(3)}</Num>} den={<Num>{math.exitProbability.toFixed(3)}</Num>} />} />
+          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>{math.exitProbability.toFixed(3)}</Num>} den={<Num>{math.shawarmaWeight.toFixed(3)}</Num>} />
         </>
       ),
       result: (
