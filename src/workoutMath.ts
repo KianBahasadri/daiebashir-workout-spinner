@@ -6,11 +6,10 @@ const LENGTH_CURVE_TARGET_CDF = 0.95
 export function calculateMathStats(exercises: Exercise[]): MathStats {
   // Calculate probabilities based on rarity
   const exitExercises = exercises.filter((exercise) => exercise.isExitCondition)
-  const exitProbability = exitExercises.reduce((sum, exercise) => sum + RARITY_CONFIG[exercise.rarity].probability, 0)
-
-  // Calculate total weight (for backward compatibility with existing math)
-  const totalWeight = exercises.length // Simplified - each exercise has equal "weight" now
-  const exitWeight = exitProbability * totalWeight // Weighted representation of exit probability
+  const exitProbability = exitExercises.reduce(
+    (sum, exercise) => sum + RARITY_CONFIG[exercise.rarity].probability,
+    0,
+  )
 
   // Calculate shawarma-specific stats (Legendary tier only)
   const shawarmaExercise = exercises.find((exercise) => exercise.rarity === 'legendary')
@@ -49,9 +48,8 @@ export function calculateMathStats(exercises: Exercise[]): MathStats {
   }
 
   const expectedDurationPerSpin = totalDurationWeight > 0 ? weightedDurationSum / totalDurationWeight : 0
-  const nonExitWeight = nonExitExercises.length // For backward compatibility
 
-  // Expected total workout duration = expected exercises before shawarma × expected duration per exercise
+  // Expected total workout duration = expected exercises before end × expected duration per exercise
   const expectedTotalDuration = Number.isFinite(expectedExercisesBeforeEnd)
     ? expectedExercisesBeforeEnd * expectedDurationPerSpin
     : Number.POSITIVE_INFINITY
@@ -66,6 +64,10 @@ export function calculateMathStats(exercises: Exercise[]): MathStats {
     else rarityGroupsMap.set(exercise.rarity, [exercise])
   }
 
+  // Calculate expected hits per workout:
+  // - For all exercises (exit or regular), expected hits = P(item) / P(exit)
+  // - This is because every spin has probability P(item) of picking that item,
+  //   and every workout ends after exactly 1 exit condition (total prob P(exit)).
   const groupedByRarity = Array.from(rarityGroupsMap.entries())
     .map(([rarityKey, exercisesInGroup]) => {
       const rarity = rarityKey as keyof typeof RARITY_CONFIG
@@ -76,14 +78,7 @@ export function calculateMathStats(exercises: Exercise[]): MathStats {
       // Check if this group contains exit conditions
       const hasExitConditions = exercisesInGroup.some((e) => e.isExitCondition)
 
-      // Expected hits per workout:
-      // - For exit conditions: P(ending with this exit) = rarityProbability (shawarma is only exit)
-      // - For regular exercises: expectedExercisesBeforeEnd × perItemProbability
-      const expectedHitsPerWorkout = hasExitConditions
-        ? rarityProbability
-        : Number.isFinite(expectedExercisesBeforeEnd)
-          ? expectedExercisesBeforeEnd * perItemProbability
-          : Number.POSITIVE_INFINITY
+      const expectedHitsPerWorkout = exitProbability > 0 ? rarityProbability / exitProbability : 0
 
       return {
         rarity,
@@ -114,9 +109,6 @@ export function calculateMathStats(exercises: Exercise[]): MathStats {
   })
 
   return {
-    totalWeight,
-    exitWeight,
-    nonExitWeight,
     usesUniformFallback,
     exitProbability,
     expectedSpinsUntilEnd,

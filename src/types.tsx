@@ -38,9 +38,6 @@ export type LengthCurvePoint = {
 }
 
 export type MathStats = {
-  totalWeight: number
-  exitWeight: number
-  nonExitWeight: number
   usesUniformFallback: boolean
   exitProbability: number
   expectedSpinsUntilEnd: number
@@ -99,16 +96,16 @@ export type Explanation = {
 export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   exitProbability: {
     title: 'Exit Probability',
-    content: `This is the chance of landing on any exit condition each spin. Based on the Legendary (red) and Godly (gold) rarity tier probabilities.`,
+    content: `This is the chance of landing on any exercise marked as an exit condition (like Shawarma) on any given spin. Calculated as the sum of probabilities of all exit exercises.`,
     formula: (math) => ({
       general: (
         <>
-          <Var>p</Var> <Op>=</Op> <Frac num={<><Var>W</Var><Sub>exit</Sub></>} den={<><Var>W</Var><Sub>total</Sub></>} />
+          <Var>p</Var> <Op>=</Op> Σ <Var>P</Var>(<Var>e</Var><Sub>exit</Sub>)
         </>
       ),
       substituted: (
         <>
-          <Var>p</Var> <Op>=</Op> <Frac num={<Num>{math.exitWeight.toFixed(2)}</Num>} den={<Num>{math.totalWeight.toFixed(2)}</Num>} />
+          <Var>p</Var> <Op>=</Op> <Num>{math.exitProbability.toFixed(3)}</Num>
         </>
       ),
       result: (
@@ -120,7 +117,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   avgExercises: {
     title: 'Average Exercises Before Exit',
-    content: `The expected number of exercises you'll complete before hitting an exit condition (like shawarma or Shawarma + Beer). This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
+    content: `The expected number of exercises you'll complete before hitting an exit condition. This follows a geometric distribution where we expect (1-p)/p non-exit spins before the workout ends.`,
     formula: (math) => ({
       general: (
         <>
@@ -141,16 +138,16 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   avgDuration: {
     title: 'Average Duration Per Exercise',
-    content: `The weighted average duration of non-exit exercises. Each exercise's duration is weighted by its probability of being selected given you didn't hit an exit.`,
+    content: `The weighted average duration of non-exit exercises. Since rarity tiers have different probabilities, we weight each tier's average duration by its probability relative to the total non-exit probability.`,
     formula: (math) => ({
       general: (
         <>
-          <Var>D̄</Var> <Op>=</Op> <Frac num={<>Σ<Sub>i: non-exit</Sub> (<Var>w</Var><Sub>i</Sub> <Op>×</Op> <Var>d</Var><Sub>i</Sub>)</>} den={<><Var>W</Var><Sub>non-exit</Sub></>} />
+          <Var>D̄</Var> <Op>=</Op> <Frac num={<>Σ (<Var>P</Var><Sub>r</Sub> <Op>×</Op> <Var>D</Var><Sub>r</Sub>)</>} den={<><Var>P</Var><Sub>non-exit</Sub></>} />
         </>
       ),
       substituted: (
         <>
-          <Var>D̄</Var> <Op>=</Op> <Frac num={<Num>{(math.expectedDurationPerSpin * math.nonExitWeight).toFixed(1)}</Num>} den={<Num>{math.nonExitWeight.toFixed(2)}</Num>} />
+          <Var>D̄</Var> <Op>=</Op> <Frac num={<Num>{(math.expectedDurationPerSpin * (1 - math.exitProbability)).toFixed(3)}</Num>} den={<Num>{(1 - math.exitProbability).toFixed(3)}</Num>} />
         </>
       ),
       result: (
@@ -162,7 +159,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   totalDuration: {
     title: 'Average Workout Duration Before Exit',
-    content: `Average workout time before hitting an exit condition (like shawarma or Shawarma + Beer) is the average number of exercises multiplied by the average duration per exercise.`,
+    content: `Average workout time is the average number of exercises multiplied by the average duration per exercise.`,
     formula: (math) => ({
       general: (
         <>
@@ -183,7 +180,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   shawarma: {
     title: 'Workouts Until Shawarma',
-    content: `The expected number of complete workouts until one ends specifically with the legendary <span class="shawarma-text">shawarma</span> (not including the Godly Shawarma + Beer). Since every workout ends with an exit condition, this is 1 / P(shawarma | exit).`,
+    content: `The expected number of complete workouts until one ends specifically with the legendary <span class="shawarma-text">shawarma</span>. Since every workout ends with exactly one exit condition, this is 1 / P(shawarma | exit).`,
     formula: (math) => ({
       general: (
         <>
@@ -246,18 +243,18 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   rarity: {
     title: 'Rarity System',
-    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (30%), Epic (15%), Legendary (4%), Godly (1%). Expected hits = avg exercises × probability per exercise.`,
+    content: `Exercises are grouped by rarity tiers with fixed probabilities per spin. Expected hits per workout = P(rarity) / P(exit).`,
     formula: (math) => {
-      const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
+      const sampleGroup = math.groupedByRarity[0]
       return {
         general: (
           <>
-            <Var>hits</Var> <Op>=</Op> <Var>E</Var>[exercises] <Op>×</Op> <Var>p</Var><Sub>rarity</Sub>
+            <Var>hits</Var> <Op>=</Op> <Frac num={<><Var>P</Var><Sub>rarity</Sub></>} den={<Var>p</Var>} />
           </>
         ),
         substituted: (
           <>
-            <Var>hits</Var> <Op>=</Op> <Num>{Number.isFinite(math.expectedExercisesBeforeEnd) ? math.expectedExercisesBeforeEnd.toFixed(2) : '∞'}</Num> <Op>×</Op> <Num>{sampleGroup ? formatPercent(sampleGroup.perItemProbability) : 'N/A'}</Num>
+            <Var>hits</Var> <Op>=</Op> <Frac num={<Num>{sampleGroup ? sampleGroup.groupProbability.toFixed(3) : 'N/A'}</Num>} den={<Num>{math.exitProbability.toFixed(3)}</Num>} />
           </>
         ),
         result: (
@@ -270,9 +267,9 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   workoutsUntilHit: {
     title: 'Workouts Until Hit',
-    content: `The expected number of complete workout sessions before landing on this exercise at least once.`,
+    content: `The expected number of complete workout sessions before landing on this exercise tier at least once.`,
     formula: (math) => {
-      const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
+      const sampleGroup = math.groupedByRarity[0]
       const hitsPerWorkout = sampleGroup?.expectedHitsPerWorkout ?? 0
       return {
         general: (
