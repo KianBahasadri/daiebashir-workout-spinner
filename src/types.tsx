@@ -98,7 +98,7 @@ export type Explanation = {
 export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   exitProbability: {
     title: 'Exit Probability',
-    content: `This is the chance of landing on any exit condition each spin. Based on the Legendary (gold) rarity tier probability.`,
+    content: `This is the chance of landing on any exit condition each spin. Based on the Legendary (red) and Godly (gold) rarity tier probabilities.`,
     formula: (math) => ({
       general: (
         <>
@@ -118,8 +118,8 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
     }),
   },
   avgExercises: {
-    title: 'Average Exercises Before Shawarma',
-    content: `The expected number of actual exercises you'll do before hitting <span class="shawarma-text">shawarma</span>. This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
+    title: 'Average Exercises Before Exit',
+    content: `The expected number of exercises you'll complete before hitting an exit condition (like shawarma or Shawarma + Beer). This follows a geometric distribution where we expect (1-p)/p non-exit spins before hitting an exit.`,
     formula: (math) => ({
       general: (
         <>
@@ -160,8 +160,8 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
     }),
   },
   totalDuration: {
-    title: 'Average Workout Duration Before Shawarma',
-    content: `Average workout time before hitting <span class="shawarma-text">shawarma</span> is the average number of exercises multiplied by the average duration per exercise.`,
+    title: 'Average Workout Duration Before Exit',
+    content: `Average workout time before hitting an exit condition (like shawarma or Shawarma + Beer) is the average number of exercises multiplied by the average duration per exercise.`,
     formula: (math) => ({
       general: (
         <>
@@ -182,16 +182,16 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   shawarma: {
     title: 'Workouts Until Shawarma',
-    content: `Given that each workout ends with some exit condition, this is the expected number of complete workouts until one specifically ends with <span class="shawarma-text">shawarma</span>.`,
+    content: `The expected number of complete workouts until one ends specifically with the legendary <span class="shawarma-text">shawarma</span> (not including the Godly Shawarma + Beer). Since every workout ends with an exit condition, this is 1 / P(shawarma | exit).`,
     formula: (math) => ({
       general: (
         <>
-          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<><Var>W</Var><Sub>exit</Sub></>} den={<><Var>W</Var><Sub>shawarma</Sub></>} />
+          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<><Var>P</Var>(<Var>exit</Var>)</>} den={<><Var>P</Var>(<Var>shawarma</Var>)</>} />
         </>
       ),
       substituted: (
         <>
-          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>{math.exitWeight.toFixed(2)}</Num>} den={<Num>{math.shawarmaWeight.toFixed(2)}</Num>} />
+          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>{math.exitProbability.toFixed(3)}</Num>} den={<Num>{math.shawarmaWeight.toFixed(3)}</Num>} />
         </>
       ),
       result: (

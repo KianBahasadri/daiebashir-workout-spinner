@@ -5,6 +5,7 @@ import { ExercisesTab } from './ExercisesTab'
 import { RulesTab } from './RulesTab'
 import { useRouletteSound } from './useRouletteSound'
 import { type Exercise, type ExplanationKey, type MathStats, RARITY_CONFIG } from './types.tsx'
+import { spinsForCdf, geometricCdf } from './mathUtils'
 
 const EXERCISES: Exercise[] = [
   // Common - Cardio exercises (white)
@@ -26,14 +27,6 @@ const EXERCISES: Exercise[] = [
 ]
 
 const LENGTH_CURVE_TARGET_CDF = 0.95
-
-const spinsForCdf = (p: number, targetCdf: number) => {
-  if (!Number.isFinite(p) || p <= 0) return Number.POSITIVE_INFINITY
-  if (p >= 1) return 1
-  const clampedTarget = Math.max(0, Math.min(0.999999, targetCdf))
-  // Smallest k such that 1 - (1 - p)^k >= targetCdf
-  return Math.max(1, Math.ceil(Math.log(1 - clampedTarget) / Math.log(1 - p)))
-}
 
 const pickExerciseIndex = (exercises: Exercise[]) => {
   // Group exercises by rarity
@@ -173,13 +166,14 @@ function App() {
   }, [shuffledExercises])
 
   const trackItems = useMemo(() => {
-    const items: Array<{ name: string; color: string; key: string }> = []
+    const items: Array<{ name: string; color: string; key: string; rarity: string }> = []
     for (let repeat = 0; repeat < TRACK_REPEATS; repeat += 1) {
       for (const exercise of shuffledExercises) {
         items.push({
           name: exercise.name,
           color: exercise.color,
-          key: `${repeat}-${exercise.name}`,
+          rarity: exercise.rarity,
+          key: `${repeat}-${exercise.name}-${exercise.key}`,
         })
       }
     }
@@ -272,17 +266,17 @@ function App() {
   const math = useMemo((): MathStats => {
     // Calculate probabilities based on rarity
     const exitExercises = shuffledExercises.filter((exercise) => exercise.isExitCondition)
-    const exitProbability = exitExercises.length > 0 ? RARITY_CONFIG.legendary.probability : 0
+    const exitProbability = exitExercises.reduce((sum, exercise) => sum + RARITY_CONFIG[exercise.rarity].probability, 0)
 
     // Calculate total weight (for backward compatibility with existing math)
     const totalWeight = shuffledExercises.length // Simplified - each exercise has equal "weight" now
+    const exitWeight = exitProbability * totalWeight // Weighted representation of exit probability
 
     // Calculate shawarma-specific stats
     const shawarmaExercise = shuffledExercises.find((exercise) => exercise.name.toLowerCase().includes('shawarma'))
     const shawarmaWeight = shawarmaExercise ? RARITY_CONFIG.legendary.probability : 0
-    const exitWeight = exitExercises.length > 0 ? RARITY_CONFIG.legendary.probability : 0
-    const shawarmaGivenExit = exitWeight > 0 ? 1.0 : 0 // Shawarma is the only exit condition, so 100% chance given exit
-    const expectedWorkoutsUntilShawarma = shawarmaGivenExit > 0 ? 1 / shawarmaGivenExit : Number.POSITIVE_INFINITY
+    const shawarmaGivenExit = exitProbability > 0 ? shawarmaWeight / exitProbability : 0 // Probability of shawarma given exit
+    const expectedWorkoutsUntilShawarma = shawarmaGivenExit > 0 ? 1 / shawarmaGivenExit : Number.POSITIVE_INFINITY // Workouts until specific legendary shawarma hit
 
     const usesUniformFallback = false // We now have defined probabilities
 
@@ -323,11 +317,7 @@ function App() {
       ? expectedExercisesBeforeEnd * expectedDurationPerSpin
       : Number.POSITIVE_INFINITY
 
-    const cdf = (spins: number) => {
-      if (exitProbability <= 0) return 0
-      if (spins <= 0) return 0
-      return 1 - Math.pow(1 - exitProbability, spins)
-    }
+    const cdf = (spins: number) => geometricCdf(exitProbability, spins)
 
     // Group by rarity instead of weight
     const rarityGroupsMap = new Map<string, Exercise[]>()
@@ -481,7 +471,10 @@ function App() {
                 className={`reel-item${index === selectedIndex ? ' selected' : ''} ${exercise.rarity === 'legendary' ? 'legendary-tier' : ''} ${exercise.rarity === 'godly' ? 'godly-tier' : ''}`}
                 style={{ backgroundColor: (exercise.rarity === 'legendary' || exercise.rarity === 'godly') ? undefined : exercise.color }}
               >
-                {exercise.name}
+                <div className="exercise-name-label">{exercise.name}</div>
+                <div className="rarity-label">
+                  {RARITY_CONFIG[exercise.rarity as keyof typeof RARITY_CONFIG].name}
+                </div>
               </div>
             ))}
           </div>

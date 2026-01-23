@@ -93,6 +93,7 @@ h1 {
   flex: 0 0 var(--card-width);
   height: var(--card-height);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-weight: bold;
@@ -104,6 +105,39 @@ h1 {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: clamp(3px, 0.9vw, 4px) solid rgba(0, 0, 0, 0.1);
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.exercise-name-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.rarity-label {
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  width: 100%;
+  font-weight: 800;
+}
+
+.legendary-tier .rarity-label {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.godly-tier .rarity-label {
+  background: rgba(0, 0, 0, 0.15);
+  color: #0f172a;
 }
 
 .reel-item.selected {
@@ -501,88 +535,40 @@ h1 {
 }
 
 .shawarma-text {
-  /* Fallback color for browsers that don't support background-clip:text */
-  color: #ff3b30;
+  color: #FF3B30;
   font-weight: 600;
-  /* Shiny red: gentle highlight band */
-  background: linear-gradient(
-    180deg,
-    #fff5f5 0%,
-    #feb2b2 18%,
-    #f56565 48%,
-    #e53e3e 60%,
-    #f56565 80%,
-    #fff5f5 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 6px rgba(245, 101, 101, 0.2),
-    0 2px 4px rgba(2, 6, 23, 0.6);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .godly-text {
-  /* Fallback color for browsers that don't support background-clip:text */
-  color: #ffeb3b;
+  color: #FFD700;
   font-weight: 700;
-  /* Shiny gold */
-  background: linear-gradient(
-    180deg,
-    #fffde7 0%,
-    #fff9a8 18%,
-    #ffeb3b 48%,
-    #ffd93b 60%,
-    #fff59d 80%,
-    #fffde7 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.22),
-    0 0 8px rgba(255, 235, 59, 0.3),
-    0 2px 4px rgba(2, 6, 23, 0.6);
-  filter: saturate(1.1) brightness(1.05);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Background version of the subtle shiny red for boxes/pills */
+/* Flat red for Legendary tier */
 .legendary-tier {
-  background: linear-gradient(
-    180deg,
-    #fff5f5 0%,
-    #feb2b2 18%,
-    #f56565 48%,
-    #e53e3e 60%,
-    #f56565 80%,
-    #fff5f5 100%
-  ) !important;
+  background: #FF3B30 !important;
   color: #ffffff !important;
-  border: 1px solid rgba(153, 27, 27, 0.4) !important;
-  box-shadow: 
-    0 2px 6px rgba(239, 68, 68, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(153, 27, 27, 0.6) !important;
 }
 
-/* Shiny gold for Godly tier boxes/pills */
+/* Flat gold for Godly tier */
 .godly-tier {
-  background: linear-gradient(
-    180deg,
-    #fffde7 0%,
-    #fff9a8 18%,
-    #ffeb3b 48%,
-    #ffd93b 60%,
-    #fff59d 80%,
-    #fffde7 100%
-  ) !important;
+  background: #FFD700 !important;
   color: #0f172a !important;
-  border: 1px solid rgba(184, 134, 11, 0.4) !important;
-  box-shadow: 
-    0 2px 8px rgba(255, 235, 59, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(184, 134, 11, 0.6) !important;
+}
+
+/* Ensure selected state works with special tiers */
+.reel-item.selected.legendary-tier {
+  box-shadow: 0 0 0 4px white, 0 15px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.reel-item.selected.godly-tier {
+  box-shadow: 0 0 0 4px white, 0 15px 30px rgba(0, 0, 0, 0.2) !important;
 }
 
 .weight-group-stats {

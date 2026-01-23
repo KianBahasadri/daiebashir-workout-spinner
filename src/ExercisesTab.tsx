@@ -41,6 +41,14 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
                 </div>
                 <div className="weight-group-stats">
                   <span><span className="math-mono">{formatPercent(group.perItemProbability)}</span> per exercise</span>
+                  <span className="separator">|</span>
+                  <span>
+                    <span className="math-mono">
+                      {Number.isFinite(group.expectedHitsPerWorkout) 
+                        ? group.expectedHitsPerWorkout.toFixed(2) 
+                        : '∞'}
+                    </span> hits per workout
+                  </span>
                 </div>
                 <div className="weight-group-items-compact">
                   {group.exercises.map((exercise) => (

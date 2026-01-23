@@ -1,13 +1,6 @@
 import { InfoPopup } from './InfoPopup'
 import { type MathStats, type ExplanationKey, formatPercent } from './types.tsx'
-
-const spinsForCdf = (p: number, targetCdf: number) => {
-  if (!Number.isFinite(p) || p <= 0) return Number.POSITIVE_INFINITY
-  if (p >= 1) return 1
-  const clampedTarget = Math.max(0, Math.min(0.999999, targetCdf))
-  // Smallest k such that 1 - (1 - p)^k >= targetCdf
-  return Math.max(1, Math.ceil(Math.log(1 - clampedTarget) / Math.log(1 - p)))
-}
+import { spinsForCdf } from './mathUtils'
 
 type SessionsTabProps = {
   math: MathStats
