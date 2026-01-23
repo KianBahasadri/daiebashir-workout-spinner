@@ -77,7 +77,7 @@ export function calculateMathStats(exercises: Exercise[]): MathStats {
       const hasExitConditions = exercisesInGroup.some((e) => e.isExitCondition)
 
       // Expected hits per workout:
-      // - For exit conditions: P(ending with this exit) = rarityProbability (shawarma is only exit)
+      // - For exit conditions: P(ending with this exit) = rarityProbability (applies per exit tier)
       // - For regular exercises: expectedExercisesBeforeEnd × perItemProbability
       const expectedHitsPerWorkout = hasExitConditions
         ? rarityProbability

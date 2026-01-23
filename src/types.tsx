@@ -141,7 +141,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   avgDuration: {
     title: 'Average Duration Per Exercise',
-    content: `The weighted average duration of non-exit exercises. Each exercise's duration is weighted by its probability of being selected given you didn't hit an exit.`,
+    content: `The weighted average duration of non-exit exercises. Each exercise's duration is weighted by its rarity tier probability.`,
     formula: (math) => ({
       general: (
         <>
@@ -183,16 +183,16 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   shawarma: {
     title: 'Workouts Until Shawarma',
-    content: `The expected number of complete workouts until one ends specifically with the legendary <span class="shawarma-text">shawarma</span> (not including the Godly Shawarma + Beer). Since every workout ends with an exit condition, this is 1 / P(shawarma | exit).`,
+    content: `The expected number of complete workouts until one ends specifically with the legendary <span class="shawarma-text">shawarma</span> (not including the Godly Shawarma + Beer). Since every workout ends with an exit condition, this is 1 / P(shawarma | exit) = P(exit) / P(shawarma).`,
     formula: (math) => ({
       general: (
         <>
-          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<><Var>P</Var>(<Var>exit</Var>)</>} den={<><Var>P</Var>(<Var>shawarma</Var>)</>} />
+          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>1</Num>} den={<><Var>P</Var>(<Var>shawarma</Var> | <Var>exit</Var>)</>} />
         </>
       ),
       substituted: (
         <>
-          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>{math.exitProbability.toFixed(3)}</Num>} den={<Num>{math.shawarmaWeight.toFixed(3)}</Num>} />
+          <Var>E</Var>[workouts] <Op>=</Op> <Frac num={<Num>1</Num>} den={<Frac num={<Num>{math.shawarmaWeight.toFixed(3)}</Num>} den={<Num>{math.exitProbability.toFixed(3)}</Num>} />} />
         </>
       ),
       result: (
@@ -204,7 +204,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   lengthCurve: {
     title: 'Workout Length Curve',
-    content: `This shows the geometric distribution of workout length. The probability of ending on exactly spin k follows an exponential decay.`,
+    content: `This shows the geometric distribution of workout length. The probability that the workout ends on exactly spin k (when an exit condition is hit) follows an exponential decay.`,
     formula: (math) => ({
       general: (
         <>
@@ -246,7 +246,7 @@ export const MATH_EXPLANATIONS: Record<string, Explanation> = {
   },
   rarity: {
     title: 'Rarity System',
-    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (30%), Epic (15%), Legendary (4%), Godly (1%). Expected hits = avg exercises × probability per exercise.`,
+    content: `Exercises are grouped by rarity tiers with fixed probabilities: Common (50%), Rare (30%), Epic (15%), Legendary (4%), Godly (1%). Legendary and Godly tiers contain exit conditions that end the workout. Expected hits = avg exercises × probability per exercise.`,
     formula: (math) => {
       const sampleGroup = math.groupedByRarity.find(g => !g.hasExitConditions) || math.groupedByRarity[0]
       return {
