@@ -1,4 +1,3 @@
-import React from 'react'
 import type { Explanation, MathStats, MathFormula } from './types'
 import { Frac, Sup, Sub, Var, Num, Op } from './mathComponents'
 

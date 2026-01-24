@@ -1,5 +1,3 @@
-import React from 'react'
-
 export function RulesTab() {
   return (
     <div className="math-grid">

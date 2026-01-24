@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
@@ -30,10 +30,22 @@ const EXERCISES: Exercise[] = [
 const SPIN_DURATION_MS = 4000
 const CARD_WIDTH = 160
 const CARD_GAP = 16
-const TRACK_REPEATS = 100
+// Rendering tens of thousands of cards causes a noticeable delay on refresh.
+// Keep the track short and re-center after each spin to preserve the "infinite" feel.
+const TRACK_REPEATS = 12
+const CENTER_REPEAT = Math.floor(TRACK_REPEATS / 2)
 const MIN_LOOPS = 4
 const MAX_LOOPS = 7
 const WHEEL_SLOTS = 100
+
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
 
 const buildWeightedWheelSlots = (exercises: Exercise[]) => {
   if (exercises.length === 0) return []
@@ -139,13 +151,17 @@ const getTranslateXFromComputedTransform = (el: HTMLElement) => {
 }
 
 function App() {
-  const [shuffledExercises, setShuffledExercises] = useState<Exercise[]>([])
+  const [shuffledExercises] = useState<Exercise[]>(() => shuffleArray(EXERCISES))
   const [isSpinning, setIsSpinning] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
-  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules' | 'simulation'>('sessions')
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules' | 'simulation'>('rules')
+  const [unlockedTabsCount, setUnlockedTabsCount] = useState<number>(() => {
+    const saved = localStorage.getItem('unlockedTabsCount')
+    return saved ? parseInt(saved, 10) : 0
+  })
+  const [currentIndex, setCurrentIndex] = useState(() => CENTER_REPEAT * WHEEL_SLOTS)
   const [offset, setOffset] = useState(0)
   const [reelWidth, setReelWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(CARD_WIDTH)
@@ -157,27 +173,12 @@ function App() {
   const lastTickIndexRef = useRef<number | null>(null)
   const lastTickAtMsRef = useRef(0)
 
-  // Shuffle exercises on component mount
+  // Update localStorage when unlockedTabsCount changes
   useEffect(() => {
-    const shuffleArray = <T,>(array: T[]): T[] => {
-      const shuffled = [...array]
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      return shuffled
-    }
-    setShuffledExercises(shuffleArray(EXERCISES))
-  }, [])
+    localStorage.setItem('unlockedTabsCount', unlockedTabsCount.toString())
+  }, [unlockedTabsCount])
 
-  // Set initial currentIndex after exercises are shuffled
   const wheelSlots = useMemo(() => buildWeightedWheelSlots(shuffledExercises), [shuffledExercises])
-
-  useEffect(() => {
-    if (wheelSlots.length > 0) {
-      setCurrentIndex(4 * wheelSlots.length)
-    }
-  }, [wheelSlots.length])
 
   const trackItems = useMemo(() => {
     const items: Array<{ name: string; color: string; key: string; rarity: string }> = []
@@ -336,12 +337,22 @@ function App() {
       )
       const maxIndex = trackItems.length - 1
       const snappedIndex = Math.max(0, Math.min(latestIndex, maxIndex))
-      const snappedOffset = getOffsetForIndex(snappedIndex, latestReelWidth, latestCardWidth, latestStride)
+      const slotCount = wheelSlots.length
+      if (slotCount === 0) {
+        setIsSpinning(false)
+        return
+      }
 
-      setOffset(snappedOffset)
-      setSelectedExercise(wheelSlots[snappedIndex % wheelSlots.length].name)
-      setCurrentIndex(snappedIndex)
-      setSelectedIndex(snappedIndex)
+      // Re-center to keep the track short (prevents index drift over many spins).
+      const snappedSlotIndex = snappedIndex % slotCount
+      const normalizedIndex = CENTER_REPEAT * slotCount + snappedSlotIndex
+      const normalizedOffset = getOffsetForIndex(normalizedIndex, latestReelWidth, latestCardWidth, latestStride)
+
+      setOffset(normalizedOffset)
+      setSelectedExercise(wheelSlots[snappedSlotIndex].name)
+      setCurrentIndex(normalizedIndex)
+      setSelectedIndex(normalizedIndex)
+      setUnlockedTabsCount((prev) => Math.min(prev + 1, 4))
       setIsSpinning(false)
     }, SPIN_DURATION_MS)
   }
@@ -392,67 +403,77 @@ function App() {
         </div>
       )}
 
-      <section className="math" aria-label="Math and odds" onClick={() => setActivePopup(null)}>
-        <div className="math-tabs">
-          <button
-            className={`math-tab${mathTab === 'sessions' ? ' active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); setMathTab('sessions'); }}
-            type="button"
-          >
-            Sessions
-          </button>
-          <button
-            className={`math-tab${mathTab === 'exercises' ? ' active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); setMathTab('exercises'); }}
-            type="button"
-          >
-            Exercises
-          </button>
-          <button
-            className={`math-tab${mathTab === 'rules' ? ' active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); setMathTab('rules'); }}
-            type="button"
-          >
-            Rules
-          </button>
-          <button
-            className={`math-tab${mathTab === 'simulation' ? ' active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); setMathTab('simulation'); }}
-            type="button"
-          >
-            Simulation
-          </button>
-        </div>
+      {unlockedTabsCount > 0 && (
+        <section className="math" aria-label="Math and odds" onClick={() => setActivePopup(null)}>
+          <div className="math-tabs">
+            {unlockedTabsCount >= 1 && (
+              <button
+                className={`math-tab${mathTab === 'rules' ? ' active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setMathTab('rules'); }}
+                type="button"
+              >
+                Rules
+              </button>
+            )}
+            {unlockedTabsCount >= 2 && (
+              <button
+                className={`math-tab${mathTab === 'exercises' ? ' active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setMathTab('exercises'); }}
+                type="button"
+              >
+                Exercises
+              </button>
+            )}
+            {unlockedTabsCount >= 3 && (
+              <button
+                className={`math-tab${mathTab === 'sessions' ? ' active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setMathTab('sessions'); }}
+                type="button"
+              >
+                Sessions
+              </button>
+            )}
+            {unlockedTabsCount >= 4 && (
+              <button
+                className={`math-tab${mathTab === 'simulation' ? ' active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setMathTab('simulation'); }}
+                type="button"
+              >
+                Simulation
+              </button>
+            )}
+          </div>
 
-        {mathTab === 'sessions' && (
-          <SessionsTab
-            math={math}
-            activePopup={activePopup}
-            setActivePopup={setActivePopup}
-          />
-        )}
+          {unlockedTabsCount >= 1 && mathTab === 'rules' && (
+            <RulesTab />
+          )}
 
-        {mathTab === 'exercises' && (
-          <ExercisesTab
-            math={math}
-            activePopup={activePopup}
-            setActivePopup={setActivePopup}
-          />
-        )}
+          {unlockedTabsCount >= 2 && mathTab === 'exercises' && (
+            <ExercisesTab
+              math={math}
+              activePopup={activePopup}
+              setActivePopup={setActivePopup}
+            />
+          )}
 
-        {mathTab === 'rules' && (
-          <RulesTab />
-        )}
+          {unlockedTabsCount >= 3 && mathTab === 'sessions' && (
+            <SessionsTab
+              math={math}
+              activePopup={activePopup}
+              setActivePopup={setActivePopup}
+            />
+          )}
 
-        {mathTab === 'simulation' && (
-          <SimulationTab 
-            exercises={shuffledExercises}
-            math={math}
-            activePopup={activePopup}
-            setActivePopup={setActivePopup}
-          />
-        )}
-      </section>
+          {unlockedTabsCount >= 4 && mathTab === 'simulation' && (
+            <SimulationTab 
+              exercises={shuffledExercises}
+              math={math}
+              activePopup={activePopup}
+              setActivePopup={setActivePopup}
+            />
+          )}
+        </section>
+      )}
     </div>
   )
 }

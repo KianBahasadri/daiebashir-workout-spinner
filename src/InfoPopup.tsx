@@ -1,4 +1,3 @@
-import React from 'react'
 import { type ExplanationKey, type MathStats } from './types'
 import { MATH_EXPLANATIONS } from './mathExplanations'
 

@@ -1,4 +1,3 @@
-import React from 'react'
 import { InfoPopup } from './InfoPopup'
 import { type MathStats, type ExplanationKey, RARITY_CONFIG } from './types'
 import { formatPercent } from './utils'

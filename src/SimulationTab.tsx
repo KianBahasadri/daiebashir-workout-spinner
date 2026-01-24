@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { InfoPopup } from './InfoPopup'
 import { type Exercise, type MathStats, type ExplanationKey, RARITY_CONFIG } from './types'
 import { pickExerciseIndex } from './workoutMath'

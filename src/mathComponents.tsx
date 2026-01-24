@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 
 // Helper components for math notation
 export const Frac = ({ num, den }: { num: ReactNode; den: ReactNode }) => (
