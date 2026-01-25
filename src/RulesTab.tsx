@@ -20,7 +20,7 @@ export function RulesTab() {
 
           <div className="rule-section">
             <h4>⏱️ Timer Rule</h4>
-            <p>Machine adjustments, rest breaks, and setup time are all part of the exercise duration - no need to pause the timer.</p>
+            <p>Machine adjustments, rest breaks, and setup time are all part of the exercise duration - no need to pause the timer. For set-based exercises, choose whatever sets and reps fit the time; you may land on it again later.</p>
           </div>
 
           <div className="rule-section">
