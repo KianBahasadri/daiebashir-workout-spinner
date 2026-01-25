@@ -19,6 +19,11 @@ export function RulesTab() {
           </div>
 
           <div className="rule-section">
+            <h4>⏱️ Timing Rules</h4>
+            <p>For exercises with sets and reps, choose your own structure to fit the allocated time. Short durations limit intensity naturally—you'll likely land on them again anyway.</p>
+          </div>
+
+          <div className="rule-section">
             <h4>⚖️ How Weighting Works</h4>
             <p>The wheel isn't perfectly balanced; it uses a <strong>Weighted Rarity System</strong> to determine what you'll do next:</p>
             <ul>
