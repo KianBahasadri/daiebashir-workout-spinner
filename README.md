@@ -33,13 +33,7 @@ Traditional gambling exploits psychological mechanisms (variable ratio reinforce
 - **Transparent Design**: The probability mathematics are openly displayed and explained in the app. Users can see exactly how the randomization works.
 - **No Exploitation**: Since there's no financial component, being psychologically manipulative to increase engagement means users exercise more, not lose money.
 
-### The Goal
-
-The explicit goal of this application is to be **maximally engaging and psychologically compelling** to motivate people to work out. We leverage the same dopamine-triggering mechanics that make slot machines and loot boxes engaging—rarity tiers, anticipation, variable rewards—but redirect that engagement toward fitness instead of gambling.
-
 In this context, making the app "addictive" is not only ethical but desirable. If someone becomes "addicted" to spinning for workouts, the result is improved health and fitness, not financial harm.
-
-**Bottom Line**: This app gamifies exercise by borrowing psychological techniques from gambling, but it's free, transparent, and designed to improve your health—not empty your wallet.
 
 ## Project Analysis & Roadmap
 
@@ -48,7 +42,7 @@ In this context, making the app "addictive" is not only ethical but desirable. I
 This application is a **stochastic workout generator**. It gamifies exercise by treating a workout session like a series of "loot box" openings or slot machine spins.
 
 1. **The Spin**: User clicks a button to spin the roulette-style wheel
-2. **RNG Logic**: The app selects an exercise based on a weighted probability table defined in `src/types.tsx`:
+2. **RNG Logic**: The app selects an exercise based on a weighted probability table defined in `src/types.ts`:
    - First, a rarity tier is selected based on fixed probabilities (Common 50%, Rare 30%, Epic 15%, Legendary 4%, Godly 1%)
    - Then, a random exercise is chosen from that tier
 3. **Rarity System**: Exercises are categorized into tiers with specific drop rates:
@@ -61,7 +55,7 @@ This application is a **stochastic workout generator**. It gamifies exercise by 
 **Math Transparency**: A dedicated tab (`SessionsTab.tsx`) calculates and displays the expected value (EV) of the workout, such as "Average exercises before Shawarma" and "Likelihood the game ends on spin X," utilizing geometric distributions. All mathematical formulas are not just calculated but also **displayed and explained** in the UI, making the probability mechanics transparent to users.
 
 **Weaknesses:**
-- ❌ **No Persistence**: Sessions aren't saved; refreshing loses all progress. No usage of `localStorage` or database calls anywhere in the codebase
+- ❌ **Limited Persistence**: Only unlocked tabs are saved to `localStorage`. Sessions and progress aren’t saved—refreshing still clears your current run.
 - ❌ **Hardcoded Configuration**: Exercises are hardcoded in `App.tsx` - changing exercises requires editing source code and redeploying
 - ❌ **Limited Visual Feedback**: High-tier spins lack extra visual impact - difference between Common and Godly is just text and background color
 - ❌ **No Progress Tracking**: Can't see historical workout data or streaks
@@ -96,14 +90,3 @@ To further encourage engagement through the "Illusion of Control" and "Sunk Cost
 - **Insurance (Pre-Commitment)**: Offer "Shawarma Insurance" (e.g., do 20 jumping jacks now) for a free re-roll if they land on a long cardio exercise later.
 - **Daily Double (Happy Hour)**: Double Shawarma odds during a specific hour (e.g., 5-6 PM) to condition a consistent workout habit.
 - **The Shawarma Fund (Financial Commitment)**: An optional mode where each spin "costs" $1 (virtual or via a linked savings app). This builds a "Shawarma Bank." When you hit the exit condition, the accumulated bank is what pays for your actual meal, turning the workout into a literal "earning" session for the reward.
-
-**Technical Debt:**
-10. Move `EXERCISES` array to a JSON config file
-11. Add unit tests for probability functions in `workoutMath.ts`
-12. Implement proper error boundaries for audio context failures
-
----
-
-
-AN IDEA:
-special mode, each roll costs $1, which is saved in your bank. once you land on shawarma, your bank pays for the shawarma.

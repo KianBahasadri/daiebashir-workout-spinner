@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SessionsTab } from './SessionsTab'
 import { ExercisesTab } from './ExercisesTab'
+import { GameTab } from './GameTab'
 import { RulesTab } from './RulesTab'
 import { SimulationTab } from './SimulationTab'
 import { useRouletteSound } from './useRouletteSound'
@@ -156,7 +157,7 @@ function App() {
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activePopup, setActivePopup] = useState<ExplanationKey | null>(null)
-  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'rules' | 'simulation'>('rules')
+  const [mathTab, setMathTab] = useState<'sessions' | 'exercises' | 'game' | 'rules' | 'simulation'>('game')
   const [unlockedTabsCount, setUnlockedTabsCount] = useState<number>(() => {
     const saved = localStorage.getItem('unlockedTabsCount')
     return saved ? parseInt(saved, 10) : 0
@@ -352,7 +353,8 @@ function App() {
       setSelectedExercise(wheelSlots[snappedSlotIndex].name)
       setCurrentIndex(normalizedIndex)
       setSelectedIndex(normalizedIndex)
-      setUnlockedTabsCount((prev) => Math.min(prev + 1, 4))
+      // Increase max unlocked tabs to 5
+      setUnlockedTabsCount((prev) => Math.min(prev + 1, 5))
       setIsSpinning(false)
     }, SPIN_DURATION_MS)
   }
@@ -408,6 +410,15 @@ function App() {
           <div className="math-tabs">
             {unlockedTabsCount >= 1 && (
               <button
+                className={`math-tab${mathTab === 'game' ? ' active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setMathTab('game'); }}
+                type="button"
+              >
+                Game
+              </button>
+            )}
+            {unlockedTabsCount >= 2 && (
+              <button
                 className={`math-tab${mathTab === 'rules' ? ' active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); setMathTab('rules'); }}
                 type="button"
@@ -415,7 +426,7 @@ function App() {
                 Rules
               </button>
             )}
-            {unlockedTabsCount >= 2 && (
+            {unlockedTabsCount >= 3 && (
               <button
                 className={`math-tab${mathTab === 'exercises' ? ' active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); setMathTab('exercises'); }}
@@ -424,7 +435,7 @@ function App() {
                 Exercises
               </button>
             )}
-            {unlockedTabsCount >= 3 && (
+            {unlockedTabsCount >= 4 && (
               <button
                 className={`math-tab${mathTab === 'sessions' ? ' active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); setMathTab('sessions'); }}
@@ -433,7 +444,7 @@ function App() {
                 Sessions
               </button>
             )}
-            {unlockedTabsCount >= 4 && (
+            {unlockedTabsCount >= 5 && (
               <button
                 className={`math-tab${mathTab === 'simulation' ? ' active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); setMathTab('simulation'); }}
@@ -444,11 +455,15 @@ function App() {
             )}
           </div>
 
-          {unlockedTabsCount >= 1 && mathTab === 'rules' && (
+          {unlockedTabsCount >= 1 && mathTab === 'game' && (
+            <GameTab />
+          )}
+
+          {unlockedTabsCount >= 2 && mathTab === 'rules' && (
             <RulesTab />
           )}
 
-          {unlockedTabsCount >= 2 && mathTab === 'exercises' && (
+          {unlockedTabsCount >= 3 && mathTab === 'exercises' && (
             <ExercisesTab
               math={math}
               activePopup={activePopup}
@@ -456,7 +471,7 @@ function App() {
             />
           )}
 
-          {unlockedTabsCount >= 3 && mathTab === 'sessions' && (
+          {unlockedTabsCount >= 4 && mathTab === 'sessions' && (
             <SessionsTab
               math={math}
               activePopup={activePopup}
@@ -464,7 +479,7 @@ function App() {
             />
           )}
 
-          {unlockedTabsCount >= 4 && mathTab === 'simulation' && (
+          {unlockedTabsCount >= 5 && mathTab === 'simulation' && (
             <SimulationTab 
               exercises={shuffledExercises}
               math={math}
