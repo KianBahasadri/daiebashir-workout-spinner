@@ -30,8 +30,8 @@ const buildProbabilityGrid = (math: MathStats, totalBoxes: number) => {
     return { ...item, copies, remainder: rawCopies - copies }
   })
 
-  let used = plans.reduce((sum, plan) => sum + plan.copies, 0)
-  let remaining = totalBoxes - used
+  const used = plans.reduce((sum, plan) => sum + plan.copies, 0)
+  const remaining = totalBoxes - used
 
   if (remaining > 0) {
     plans
@@ -181,7 +181,6 @@ export function ExercisesTab({ math, activePopup, setActivePopup }: ExercisesTab
                 const rarityConfig = RARITY_CONFIG[cell.rarity as keyof typeof RARITY_CONFIG]
                 return (
                   <span
-                    // eslint-disable-next-line react/no-array-index-key
                     key={`${cell.exerciseName}-${index}`}
                     className={`probability-cell${cell.rarity === 'common' ? ' probability-cell--common' : ''}`}
                     style={{ backgroundColor: cell.color || rarityConfig.color }}
