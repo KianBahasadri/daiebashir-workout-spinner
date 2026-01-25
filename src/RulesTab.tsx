@@ -19,6 +19,11 @@ export function RulesTab() {
           </div>
 
           <div className="rule-section">
+            <h4>⏱️ Timer Rule</h4>
+            <p>Machine adjustments, rest breaks, and setup time are all part of the exercise duration - no need to pause the timer.</p>
+          </div>
+
+          <div className="rule-section">
             <h4>⚖️ How Weighting Works</h4>
             <p>The wheel isn't perfectly balanced; it uses a <strong>Weighted Rarity System</strong> to determine what you'll do next:</p>
             <ul>
