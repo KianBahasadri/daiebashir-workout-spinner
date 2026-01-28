@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 const TICK_DURATION_S = 0.03
-const MASTER_GAIN = 2
+const MASTER_GAIN = 6
 
 export function useRouletteSound() {
   const audioContextRef = useRef<AudioContext | null>(null)
