@@ -41,6 +41,7 @@ In this context, making the app "addictive" is not only ethical but desirable. I
 
 This application is a **stochastic workout generator**. It gamifies exercise by treating a workout session like a series of "loot box" openings or slot machine spins.
 
+#### Mode 1: The Roulette (Current)
 1. **The Spin**: User clicks a button to spin the roulette-style wheel
 2. **RNG Logic**: The app selects an exercise based on a weighted probability table defined in `src/types.ts`:
    - First, a rarity tier is selected based on fixed probabilities (Common 50%, Rare 30%, Epic 15%, Legendary 4%, Godly 1%)
@@ -51,6 +52,13 @@ This application is a **stochastic workout generator**. It gamifies exercise by 
    - **Epic (15%)**: Strength training (e.g., bench press)
    - **Legendary (4%)**: "Shawarma" (Exit Condition)
    - **Godly (1%)**: "Shawarma + Beer" (Exit Condition)
+
+#### Mode 2: Snakes & Ladders (Planned)
+A more deterministic alternative to the Roulette mode. Instead of a wheel, the user progresses through a Snakes & Ladders style board where the final square is **Shawarma**.
+
+- **Game Loop**: On every turn, you roll a die and move forward. Every roll (every square you land on) triggers an exercise.
+- **The Board**: Features snakes that send you back (more exercises) and ladders that skip you forward (closer to shawarma).
+- **Progressive Probability**: Unlike the Roulette wheel where every spin has an independent chance of ending the session, this mode provides a clear sense of progress. Your chance of "winning" increases the further down the board you get, reducing the "eternal workout" frustration.
 
 **Math Transparency**: A dedicated tab (`SessionsTab.tsx`) calculates and displays the expected value (EV) of the workout, such as "Average exercises before Shawarma" and "Likelihood the game ends on spin X," utilizing geometric distributions. All mathematical formulas are not just calculated but also **displayed and explained** in the UI, making the probability mechanics transparent to users.
 
