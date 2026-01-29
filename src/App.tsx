@@ -317,10 +317,15 @@ function App() {
             </button>
 
             {selectedExercise && (
-                <div className="result">
-                    <h2>Your exercise:</h2>
-                    <p className="exercise-name">{selectedExercise}</p>
-                </div>
+                <>
+                    <div className="result">
+                        <h2>Your exercise:</h2>
+                        <p className="exercise-name">{selectedExercise}</p>
+                    </div>
+                    <div role="status" aria-live="polite" className="sr-only">
+                        Spin complete. You got: {selectedExercise}
+                    </div>
+                </>
             )}
 
             {unlockedTabsCount > 0 && (

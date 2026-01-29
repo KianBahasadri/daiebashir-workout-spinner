@@ -10,6 +10,17 @@ export const RARITY_CONFIG = {
   godly: { name: 'Godly', color: '#FFD700', probability: 0.01, category: 'Ultimate' }
 } as const
 
+// Development-time validation to ensure probabilities sum to 1.0
+if (import.meta.env.DEV) {
+  const sum = Object.values(RARITY_CONFIG).reduce((acc, r) => acc + r.probability, 0)
+  const tolerance = 0.0001
+  if (Math.abs(sum - 1.0) > tolerance) {
+    console.error(
+      `RARITY_CONFIG probabilities do not sum to 1.0: ${sum}. This will cause incorrect probability distributions.`
+    )
+  }
+}
+
 export type Exercise = {
   name: string
   color: string
