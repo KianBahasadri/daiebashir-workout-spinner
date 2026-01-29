@@ -16,8 +16,7 @@ if (import.meta.env.DEV) {
   const tolerance = 0.0001
   if (Math.abs(sum - 1.0) > tolerance) {
     console.error(
-      `RARITY_CONFIG probabilities do not sum to 1.0: ${sum}. ` +
-      `This will cause incorrect probability distributions.`
+      `RARITY_CONFIG probabilities do not sum to 1.0: ${sum}. This will cause incorrect probability distributions.`
     )
   }
 }

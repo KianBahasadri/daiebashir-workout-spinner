@@ -322,17 +322,7 @@ function App() {
                         <h2>Your exercise:</h2>
                         <p className="exercise-name">{selectedExercise}</p>
                     </div>
-                    <div
-                        role="status"
-                        aria-live="polite"
-                        style={{
-                            position: "absolute",
-                            left: "-10000px",
-                            width: "1px",
-                            height: "1px",
-                            overflow: "hidden",
-                        }}
-                    >
+                    <div role="status" aria-live="polite" className="sr-only">
                         Spin complete. You got: {selectedExercise}
                     </div>
                 </>
