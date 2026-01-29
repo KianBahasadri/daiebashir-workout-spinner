@@ -31,8 +31,19 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
 
   const runSimulation = () => {
     if (exercises.length === 0) return
+    
+    // Prevent concurrent simulations
+    if (results?.isSimulating) return
 
-    setResults(prev => prev ? { ...prev, isSimulating: true } : null)
+    setResults(prev => prev ? { ...prev, isSimulating: true } : {
+      rarityStats: [],
+      avgLength: 0,
+      totalSpins: 0,
+      totalWorkouts: 0,
+      isSimulating: true,
+      lengthFrequencies: {},
+      stdDev: 0
+    })
 
     // Use setTimeout to allow UI to update before heavy calculation
     setTimeout(() => {
@@ -67,7 +78,12 @@ export function SimulationTab({ exercises, math, activePopup, setActivePopup }: 
           }
 
           // Safety break to prevent infinite loops if no exit condition exists
-          if (workoutLength > 1000) break 
+          if (workoutLength > 1000) {
+            workoutFinished = true
+            if (import.meta.env.DEV) {
+              console.warn('Simulation workout exceeded 1000 spins - no exit condition may be configured')
+            }
+          } 
         }
         sumOfLengthsSquared += (workoutLength * workoutLength)
         lengthFrequencies[workoutLength] = (lengthFrequencies[workoutLength] || 0) + 1

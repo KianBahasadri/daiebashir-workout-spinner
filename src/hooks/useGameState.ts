@@ -223,7 +223,17 @@ export function useGameState({
         const loops =
             MIN_LOOPS + Math.floor(Math.random() * (MAX_LOOPS - MIN_LOOPS + 1));
         const exerciseIndex = pickExerciseIndex(exercises);
-        const pickedName = exercises[exerciseIndex]?.name;
+        
+        // Validate the exercise index to prevent undefined behavior
+        if (exerciseIndex < 0 || exerciseIndex >= exercises.length) {
+            if (import.meta.env.DEV) {
+                console.error('Invalid exercise index returned:', exerciseIndex);
+            }
+            setIsSpinning(false);
+            return;
+        }
+        
+        const pickedName = exercises[exerciseIndex].name;
 
         const candidateSlots: number[] = [];
         for (let i = 0; i < wheelSlots.length; i += 1) {
