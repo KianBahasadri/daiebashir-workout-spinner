@@ -238,7 +238,7 @@ export function useGameState({
                 : Math.floor(Math.random() * wheelSlots.length);
 
         // Calculate distance to target to ensure we land exactly on the slot
-        const baseSteps = loops * exercises.length;
+        const baseSteps = loops * wheelSlots.length;
         const baseIndex = currentIndex + baseSteps;
         const baseRelativeIndex = baseIndex % wheelSlots.length;
         const alignSteps =
