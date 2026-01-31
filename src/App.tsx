@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import "./App.css";
+import "./styles/variables.css";
+import "./styles/layout.css";
+import "./styles/roulette.css";
+import "./styles/math-shared.css";
+import "./styles/rarity.css";
+import "./styles/rules.css"; // Used in GameTab and RulesTab
+
 import { SessionsTab } from "./SessionsTab";
 import { ExercisesTab } from "./ExercisesTab";
 import { GameTab } from "./GameTab";

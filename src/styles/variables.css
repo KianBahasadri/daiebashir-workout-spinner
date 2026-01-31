@@ -1,0 +1,16 @@
+:root {
+    --app-padding: clamp(1rem, 4vw, 2rem);
+    --title-size: clamp(1.8rem, 7vw, 2.6rem);
+    --roulette-height: clamp(170px, 52vw, 220px);
+    --card-width: clamp(120px, 44vw, 180px);
+    --card-height: clamp(90px, 26vw, 120px);
+    --card-gap: clamp(8px, 3vw, 16px);
+    --card-radius: 8px;
+    --card-font-size: clamp(0.95rem, 3.2vw, 1.2rem);
+    --pointer-size: clamp(2.2rem, 8vw, 3rem);
+    --btn-font-size: clamp(1.15rem, 5vw, 1.5rem);
+    --btn-pad-y: clamp(0.85rem, 3vw, 1rem);
+    --btn-pad-x: clamp(2rem, 10vw, 3rem);
+    --result-title-size: clamp(1rem, 4vw, 1.2rem);
+    --result-exercise-size: clamp(1.6rem, 7vw, 2rem);
+}

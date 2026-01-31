@@ -1,0 +1,137 @@
+.rarity-label {
+    font-size: clamp(0.6rem, 2vw, 0.75rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.08);
+    width: 100%;
+    font-weight: 800;
+}
+
+.legendary-tier .rarity-label {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.godly-tier .rarity-label {
+    background: rgba(0, 0, 0, 0.15);
+    color: #0f172a;
+}
+
+.rarity-common {
+    color: #ffffff !important;
+}
+
+.rarity-rare {
+    color: #4a90e2 !important;
+}
+
+.rarity-epic {
+    color: #9b59b6 !important;
+}
+
+.rarity-legendary {
+    color: #ff3b30 !important;
+}
+
+.rarity-godly {
+    color: #ffd700 !important;
+}
+
+.godly-text {
+    color: #ffd700;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Flat red for Legendary tier */
+.legendary-tier {
+    background: #ff3b30 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(153, 27, 27, 0.6) !important;
+}
+
+/* Flat gold for Godly tier */
+.godly-tier {
+    background: #ffd700 !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(184, 134, 11, 0.6) !important;
+}
+
+/* Ensure selected state works with special tiers */
+.reel-item.selected.legendary-tier {
+    box-shadow:
+        0 0 0 4px white,
+        0 15px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.reel-item.selected.godly-tier {
+    box-shadow:
+        0 0 0 4px white,
+        0 15px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.rarity-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rarity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.rarity-item {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.rarity-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.rarity-header .rarity-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0;
+}
+
+.rarity-prob {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #a5b4fc;
+}
+
+.rarity-item p {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: rgba(203, 213, 225, 0.8);
+}
+
+.rarity-item ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.2rem;
+}
+
+.rarity-item li {
+    color: rgba(203, 213, 225, 0.7);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}

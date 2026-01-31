@@ -1,0 +1,401 @@
+.math {
+    width: 100%;
+    max-width: 800px;
+    margin-top: clamp(2rem, 7vw, 3.25rem);
+    padding-top: clamp(1.25rem, 4vw, 1.75rem);
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.math h2 {
+    font-size: clamp(1.25rem, 4.6vw, 1.6rem);
+    margin: 0 0 1rem;
+    color: #e2e8f0;
+}
+
+.math-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.25rem;
+    scroll-padding: 0.25rem;
+}
+
+.math-tab {
+    padding: 0.6rem 1.25rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.5);
+    color: rgba(203, 213, 225, 0.85);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .math-tab {
+        padding: 0.55rem 0.95rem;
+        font-size: 0.9rem;
+    }
+}
+
+.math-tab:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #f1f5f9;
+}
+
+.math-tab.active {
+    background: linear-gradient(
+        135deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(139, 92, 246, 0.2) 100%
+    );
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #f8fafc;
+}
+
+.math-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 760px) {
+    .math-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.math-card {
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 10px 20px rgba(2, 6, 23, 0.25);
+}
+
+.math-card--full {
+    grid-column: 1 / -1;
+}
+
+.math-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    color: #f1f5f9;
+}
+
+.math-subtitle {
+    margin: 0 0 0.9rem;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.math-note {
+    margin: 0.9rem 0 0;
+    color: rgba(203, 213, 225, 0.9);
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.math-mono {
+    font-family:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+    font-size: 0.95em;
+}
+
+.math-kpis {
+    margin: 0.75rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.math-kpi {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.math-kpi dt {
+    color: rgba(226, 232, 240, 0.9);
+    font-size: 0.95rem;
+}
+
+.math-kpi dd {
+    margin: 0;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.math-kpi--highlight {
+    background: linear-gradient(
+        135deg,
+        rgba(251, 191, 36, 0.15) 0%,
+        rgba(245, 158, 11, 0.1) 100%
+    );
+    border-color: rgba(251, 191, 36, 0.35);
+}
+
+.math-kpi--highlight dt {
+    color: #fcd34d;
+}
+
+.math-kpi--highlight dd {
+    color: #fbbf24;
+}
+
+.math-chart {
+    width: 100%;
+    height: 160px;
+    display: block;
+    margin: 0.5rem 0 0.75rem;
+}
+
+.math-chart rect {
+    fill: rgba(2, 6, 23, 0.25);
+    stroke: rgba(148, 163, 184, 0.25);
+}
+
+.math-chart line {
+    stroke: rgba(148, 163, 184, 0.35);
+    stroke-width: 1;
+}
+
+.math-chart polyline {
+    fill: none;
+    stroke: rgba(99, 102, 241, 0.9);
+    stroke-width: 2.5;
+}
+
+.math-chart g:last-of-type line {
+    stroke: rgba(248, 250, 252, 0.65);
+    stroke-dasharray: 4 4;
+}
+
+.math-chart text {
+    fill: rgba(226, 232, 240, 0.9);
+    font-size: 10px;
+}
+
+.math-mini-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    color: rgba(226, 232, 240, 0.9);
+    font-size: 0.95rem;
+}
+
+.math-mini-table > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.5rem;
+}
+
+.math-duration {
+    color: rgba(167, 139, 250, 0.9);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+@media (min-width: 760px) {
+    .math-mini-table {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.weight-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 0.5rem;
+}
+
+.weight-group {
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+    background: rgba(2, 6, 23, 0.32);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.weight-group-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.weight-group-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-tag {
+    padding: 0.15rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: rgba(15, 23, 42, 0.6);
+    color: #cbd5e1;
+    margin-left: 0.5rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.weight-group-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: rgba(203, 213, 225, 0.9);
+}
+
+.weight-group-stats .math-mono {
+    color: #a5b4fc;
+}
+
+.weight-group-odds {
+    color: rgba(203, 213, 225, 0.95);
+    font-size: 0.95rem;
+}
+
+.weight-group-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.weight-group-items-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.weight-pill {
+    padding: 0.4rem 0.55rem;
+    border-radius: 999px;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: 1px solid rgba(15, 23, 42, 0.35);
+    box-shadow: 0 3px 10px rgba(2, 6, 23, 0.25);
+    user-select: none;
+}
+
+.weight-pill-compact {
+    padding: 0.25rem 0.45rem;
+    border-radius: 999px;
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 0.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.35);
+    box-shadow: 0 2px 6px rgba(2, 6, 23, 0.2);
+    user-select: none;
+    cursor: help;
+}
+
+.weight-pill.end,
+.weight-pill-compact.end {
+    outline: 2px solid rgba(248, 250, 252, 0.85);
+    outline-offset: 2px;
+}
+
+.probability-grid-section {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.probability-grid-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.probability-grid-title {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 1rem;
+}
+
+.probability-grid-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.9rem;
+    color: rgba(203, 213, 225, 0.9);
+    font-size: 0.85rem;
+}
+
+.probability-grid-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.probability-grid-swatch {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid rgba(15, 23, 42, 0.45);
+    box-shadow: 0 2px 6px rgba(2, 6, 23, 0.25);
+    flex-shrink: 0;
+}
+
+.probability-grid {
+    --prob-cell: clamp(10px, 2.2vw, 14px);
+    display: grid;
+    grid-template-columns: repeat(10, var(--prob-cell));
+    gap: 0.3rem;
+    width: fit-content;
+    padding: 0.4rem;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.22);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.probability-cell {
+    width: var(--prob-cell);
+    height: var(--prob-cell);
+    border-radius: 5px;
+    border: 1px solid rgba(15, 23, 42, 0.45);
+    box-shadow: 0 2px 6px rgba(2, 6, 23, 0.25);
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease;
+}
+
+.probability-cell--common {
+    border-color: rgba(148, 163, 184, 0.75);
+}
+
+.probability-cell:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(2, 6, 23, 0.35);
+}

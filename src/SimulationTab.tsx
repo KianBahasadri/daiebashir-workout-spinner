@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import "./styles/simulation.css";
 import { InfoPopup } from "./InfoPopup";
 import {
     type Exercise,
