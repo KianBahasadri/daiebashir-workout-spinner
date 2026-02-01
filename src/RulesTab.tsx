@@ -132,7 +132,14 @@ export function RulesTab() {
                     <h3>Stars (Advanced Mode)</h3>
                     <button
                         className={`stars-toggle${starsEnabled ? " stars-toggle--enabled" : ""}`}
-                        onClick={() => setStarsEnabled((prev) => !prev)}
+                        onClick={() => {
+                            if (!starsEnabled) {
+                                alert(
+                                    "Stars are in development and coming soon!",
+                                );
+                            }
+                            setStarsEnabled((prev) => !prev);
+                        }}
                         type="button"
                         aria-pressed={starsEnabled}
                     >

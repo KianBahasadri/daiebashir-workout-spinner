@@ -85,12 +85,10 @@ Currently, the difference between a Common and Godly pull is just text and backg
 
 **Additional Enhancement - "Loot Box" Reveal**: Instead of showing the result immediately, show a glowing orb or a shaking box that takes 1-2 seconds to open. This builds anticipation (the highest dopamine spike actually occurs *before* the reward).
 
-**Implementation**: Use libraries like `canvas-confetti` or `react-confetti`
-
 #### 5. Social Proof (Even for One User)
 **Shareable "Receipts"**: Generate a text summary or an image of the final workout list (e.g., *"I had to do 40 mins of squats before I unlocked my Shawarma"*). Even if you are the only user, being able to "see" the work you did creates satisfaction.
 
-#### 6. The RHAM Framework (Responsible Healthy Adult Manipulation)
+#### 6.
 To further encourage engagement through the "Illusion of Control" and "Sunk Cost" fallacies:
 - **Bulk Spin (3x Fast-Track)**: Let users spin 3 times at once. It feels like a 3x higher chance of landing on shawarma, but it's the same probability per spin while instantly creating a larger "Exercise Debt" that the user is more likely to commit to.
 - **Exercise Marketplace (Trading Up/Down)**: Allow users to trade exercises. Trade a high-intensity "Epic" for two lower-intensity "Rares" (Trade Down) or sacrifice a "Common" to "Buy a Reroll" with a multiplier on the next result (Trade Up).
