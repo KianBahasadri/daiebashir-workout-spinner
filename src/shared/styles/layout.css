@@ -1,0 +1,65 @@
+.app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--app-padding);
+    min-height: 100vh;
+    color: #f8fafc;
+    overflow-x: hidden;
+}
+
+h1 {
+    font-size: var(--title-size);
+    margin-bottom: clamp(1.25rem, 5vw, 2rem);
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.game-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: clamp(1.25rem, 5vw, 2rem);
+}
+
+.game-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.game-header-title {
+    margin: 0;
+}
+
+.mode-switch-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45em 0.9em;
+    border-radius: 999px;
+    border: 1px solid rgba(248, 250, 252, 0.18);
+    background: rgba(15, 23, 42, 0.6);
+    color: #f8fafc;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.mode-switch-button:hover {
+    border-color: rgba(102, 108, 255, 0.9);
+    background: rgba(15, 23, 42, 0.85);
+}
+
+.mode-switch-button:focus-visible {
+    outline: 4px auto -webkit-focus-ring-color;
+    outline-offset: 2px;
+}
